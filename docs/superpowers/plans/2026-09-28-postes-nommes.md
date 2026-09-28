@@ -348,6 +348,20 @@ describe('autoAssign — postes nommés', () => {
     expect(r.roles['s1'].keeper).not.toBe(r.roles['s1'].captation);
   });
 
+  // Le cas de la migration : les personnes sont déjà là, seuls les rôles
+  // manquent. autoAssign doit les qualifier, pas recruter à l'extérieur.
+  it('qualifie les personnes déjà en place plutôt que d\'en ajouter', () => {
+    const conf = slot('s1');
+    const st = state({
+      people: [person('p1'), person('p2'), person('p3')],
+      slots: [conf],
+      assign: { s1: ['p1', 'p2'] },
+    });
+    const r = autoAssign(st, 'fill');
+    expect(r.assign['s1'].sort()).toEqual(['p1', 'p2']);
+    expect([r.roles['s1'].keeper, r.roles['s1'].captation].sort()).toEqual(['p1', 'p2']);
+  });
+
   it('laisse les postes transverses sans rôles', () => {
     const a = slot('a', { salle: '', format: 'accueil', besoin: 1 });
     const st = state({ people: [person('p1')], slots: [a] });
@@ -362,15 +376,33 @@ describe('autoAssign — postes nommés', () => {
 
 `AutoResult` gagne `roles: Record<string, SlotRoles>`.
 
-Dans `autoAssign`, initialiser `roles` depuis `state.roles` (mode `fill`) ou `{}` (mode `all`). La boucle de remplissage, pour un créneau de salle, place poste par poste au lieu de compter :
+Dans `autoAssign`, initialiser `roles` depuis `state.roles` (mode `fill`) ou `{}` (mode `all`).
+
+**Le filtre `pending` doit changer, sans quoi rien ne serait rempli.** Il retient aujourd'hui `count(s) < need(s)` : un créneau de salle portant déjà ses deux personnes mais aucun rôle n'y entre pas. Remplacer par :
+
+```ts
+  const roleTaken = (s: Slot, r: RoleKey) => roles[s.id]?.[r];
+  const aRemplir = (s: Slot) =>
+    isSalleConference(s) ? ROLE_KEYS.some((r) => !roleTaken(s, r)) : count(s) < need(s);
+
+  const pending = state.slots.filter(aRemplir).map((s) => ({ /* …inchangé… */ }));
+```
+
+La boucle de remplissage, pour un créneau de salle, place poste par poste au lieu de compter. **Le vivier privilégie les personnes déjà sur le créneau** — `canPlace` les exclut, or leur donner un poste ne consomme aucune disponibilité supplémentaire :
 
 ```ts
     if (isSalleConference(s)) {
       for (const role of ROLE_KEYS) {
-        if (roles[s.id]?.[role]) continue;
+        if (roleTaken(s, role)) continue;
+        const autre = ROLE_KEYS.find((r) => r !== role)!;
+        // D'abord les personnes déjà présentes et sans poste : les qualifier
+        // ne consomme aucune disponibilité. On ne recrute qu'à défaut.
+        const dedans = (assign[s.id] ?? []).filter((id) => roleTaken(s, autre) !== id);
+        const vivier = dedans.length
+          ? state.people.filter((p) => dedans.includes(p.id))
+          : state.people.filter((p) => canPlace(p, s));
         let best: Person | null = null, bestScore = Infinity;
-        state.people.forEach((p, i) => {
-          if (!canPlace(p, s)) return;
+        vivier.forEach((p, i) => {
           // La captation revient de préférence à quelqu'un qui a suivi la
           // formation ; à défaut on place quand même, le diagnostic signalera.
           const prefer = role === 'captation' && formes.has(p.id) ? -100 : 0;
@@ -380,11 +412,13 @@ Dans `autoAssign`, initialiser `roles` depuis `state.roles` (mode `fill`) ou `{}
         });
         if (!best) continue;
         const b = best as Person;
-        (assign[s.id] ??= []).push(b.id);
         (roles[s.id] ??= {})[role] = b.id;
-        load[b.id]++;
-        loadDay[b.id][s.jour] = (loadDay[b.id][s.jour] ?? 0) + 1;
-        taken[b.id].push(s);
+        if (!(assign[s.id] ?? []).includes(b.id)) {
+          (assign[s.id] ??= []).push(b.id);
+          load[b.id]++;
+          loadDay[b.id][s.jour] = (loadDay[b.id][s.jour] ?? 0) + 1;
+          taken[b.id].push(s);
+        }
         placed++;
       }
       continue;
