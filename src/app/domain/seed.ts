@@ -6,8 +6,8 @@ export const FORMATION_KEY = 'formation';
 export const DEFAULT_FORMATS: Format[] = [
   { key: 'keynote', label: 'Keynote', need: 2 },
   { key: 'conference', label: 'Conférence', need: 2 },
-  { key: 'universite', label: 'Université', need: 1 },
-  { key: 'atelier', label: 'Atelier', need: 1 },
+  { key: 'universite', label: 'Université', need: 2 },
+  { key: 'atelier', label: 'Atelier', need: 2 },
   { key: 'quickie', label: 'Quickie', need: 2 },
   { key: 'tia', label: 'Tools-in-Action', need: 2 },
   { key: 'accueil', label: 'Accueil', need: 6 },

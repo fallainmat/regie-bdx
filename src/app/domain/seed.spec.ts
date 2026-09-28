@@ -63,3 +63,14 @@ describe('seedDay — formation captation', () => {
     expect(formations(state.slots).length).toBe(1);
   });
 });
+
+describe('DEFAULT_FORMATS — binôme keeper + captation', () => {
+  it('demande deux personnes sur tous les formats de salle', () => {
+    const need = Object.fromEntries(blankState().formats.map((f) => [f.key, f.need]));
+    expect(need['conference']).toBe(2);
+    expect(need['keynote']).toBe(2);
+    expect(need['quickie']).toBe(2);
+    expect(need['atelier']).toBe(2);
+    expect(need['universite']).toBe(2);
+  });
+});
