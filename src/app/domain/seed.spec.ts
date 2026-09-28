@@ -83,9 +83,10 @@ describe('DEFAULT_FORMATS — binôme keeper + captation', () => {
 describe('PROGRAMME — accord entre besoin du binôme et périmètre des salles', () => {
   it('place tout format tenu en binôme dans une salle reconnue', () => {
     const binome = ['keynote', 'conference', 'quickie', 'atelier', 'universite', 'tia'];
-    const fautifs = blankState()
-      .slots.filter((s) => binome.includes(s.format) && !isSalleConference(s))
-      .map((s) => `${s.format} en « ${s.salle} »`);
+    const tenus = blankState().slots.filter((s) => binome.includes(s.format));
+    // Sans ce garde, l'assertion suivante passerait sur un ensemble vide.
+    expect(tenus.length).toBeGreaterThan(0);
+    const fautifs = tenus.filter((s) => !isSalleConference(s)).map((s) => `${s.format} en « ${s.salle} »`);
     expect(fautifs).toEqual([]);
   });
 });
