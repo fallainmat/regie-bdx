@@ -1,7 +1,7 @@
 import { Format, POSTE_KEYS, RegieState, Slot } from './model';
 import { parseTime, uid } from './util';
 
-
+/** Clé du format de la formation à la captation. */
 export const FORMATION_KEY = 'formation';
 export const DEFAULT_FORMATS: Format[] = [
   { key: 'keynote', label: 'Keynote', need: 2 },
