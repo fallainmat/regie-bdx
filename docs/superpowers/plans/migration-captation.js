@@ -7,6 +7,7 @@
 // et devrait rester idempotent indéfiniment.
 const KEY = 'regie-helpers-v1';
 const s = JSON.parse(localStorage.getItem(KEY));
+if (!s) throw new Error('Aucune régie enregistrée sous ' + KEY + ' : rien à migrer.');
 
 // 1. Sauvegarde horodatée, restaurable.
 const backupKey = KEY + '-backup-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '');

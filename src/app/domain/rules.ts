@@ -205,11 +205,13 @@ export function diagnostics(state: RegieState): Diagnostics {
     if (miss > 0) d.under.push({ slot: s, miss });
     if (!isSalleConference(s)) continue;
     const id = captationOf(state, s);
-    if (!id) {
+    // Un id qui ne correspond à aucun helper connu vaut absence de désignation :
+    // sans cela le créneau échapperait silencieusement aux deux diagnostics.
+    const person = id ? state.people.find((p) => p.id === id) : undefined;
+    if (!person) {
       if (slotCoverage(state, s) === 'ok') d.unassignedRole.push(s);
-    } else if (!formes.has(id)) {
-      const person = state.people.find((p) => p.id === id);
-      if (person) d.untrained.push({ slot: s, person });
+    } else if (!formes.has(person.id)) {
+      d.untrained.push({ slot: s, person });
     }
   }
   for (const p of state.people) {

@@ -22,6 +22,14 @@ describe('isSalleConference', () => {
     expect(isSalleConference(slot('d', { salle: 'Lab 2' }))).toBe(true);
   });
 
+  // Sans ces négatifs à salle non vide, le prédicat pourrait être réécrit en
+  // `salle !== ''` — ou perdre son ancre ^ — sans qu'aucun test ne bronche.
+  it('écarte une salle qui ne relève ni des amphis ni des labs', () => {
+    // « Collaboratif » contient « lab » sans en être un : cela épingle l'ancre ^.
+    expect(isSalleConference(slot('g', { salle: 'Collaboratif' }))).toBe(false);
+    expect(isSalleConference(slot('h', { salle: 'Salle 1' }))).toBe(false);
+  });
+
   it('écarte les créneaux sans salle : postes et formation', () => {
     expect(isSalleConference(slot('e', { salle: '', format: 'accueil' }))).toBe(false);
     expect(isSalleConference(slot('f', { salle: '', format: 'formation' }))).toBe(false);
@@ -110,6 +118,31 @@ describe('diagnostics — captation à désigner', () => {
   // salle sont complets, l'un sans captation désignée, l'autre avec une captation
   // non formée. Sans le garde, le premier remonterait dans unassignedRole et le
   // second dans untrained.
+  // Le scénario que captationOf existe pour couvrir : après un « Tout refaire »,
+  // le créneau est de nouveau complet mais la personne désignée n'y figure plus.
+  it('signale un créneau complet dont la captation désignée a été remplacée', () => {
+    const st = avecFormation({
+      people: [person('p1'), person('p2'), person('p3')],
+      assign: { s1: ['p2', 'p3'] },
+      captation: { s1: 'p1' },
+    });
+    const d = diagnostics(st);
+    expect(d.unassignedRole.map((s) => s.id)).toEqual(['s1']);
+    expect(d.untrained).toEqual([]);
+  });
+
+  // Une désignation pointant un id absent de `people` prenait autrefois la
+  // branche untrained puis y était abandonnée : le créneau paraissait sain.
+  it('traite une captation inconnue au fichier des helpers comme à désigner', () => {
+    const st = avecFormation({
+      assign: { s1: ['p1', 'fantome'] },
+      captation: { s1: 'fantome' },
+    });
+    const d = diagnostics(st);
+    expect(d.untrained).toEqual([]);
+    expect(d.unassignedRole.map((s) => s.id)).toEqual(['s1']);
+  });
+
   it('ignore les créneaux hors salle pour les deux diagnostics', () => {
     const formation = slot('f', { salle: '', format: 'formation', besoin: 1, debut: 480, fin: 540 });
     const poste = slot('a', { salle: '', format: 'accueil', besoin: 1, debut: 480, fin: 540 });

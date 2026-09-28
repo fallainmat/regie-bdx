@@ -1,5 +1,6 @@
 import { Slot } from './model';
 import { POSTE_OUVERTURE, blankState, seedDay } from './seed';
+import { isSalleConference } from './rules';
 import { parseTime } from './util';
 
 const FORMATION = 'formation';
@@ -72,5 +73,19 @@ describe('DEFAULT_FORMATS — binôme keeper + captation', () => {
     expect(need['quickie']).toBe(2);
     expect(need['atelier']).toBe(2);
     expect(need['universite']).toBe(2);
+    expect(need['tia']).toBe(2);
+  });
+});
+
+// Deux définitions indépendantes de « tenu en binôme » coexistent : le besoin
+// porté par le format, et le périmètre porté par le NOM de la salle. Rien ne
+// les relie — ce test est ce lien.
+describe('PROGRAMME — accord entre besoin du binôme et périmètre des salles', () => {
+  it('place tout format tenu en binôme dans une salle reconnue', () => {
+    const binome = ['keynote', 'conference', 'quickie', 'atelier', 'universite', 'tia'];
+    const fautifs = blankState()
+      .slots.filter((s) => binome.includes(s.format) && !isSalleConference(s))
+      .map((s) => `${s.format} en « ${s.salle} »`);
+    expect(fautifs).toEqual([]);
   });
 });
