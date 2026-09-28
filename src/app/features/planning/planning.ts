@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RegieStore } from '../../state/regie.store';
-import { Person, Slot } from '../../domain/model';
+import { Person, RoleKey, ROLE_KEYS, Slot } from '../../domain/model';
 import {
   compareSlots, eligibility, formatLabel, isPoste, isSalleConference, personSlots, roleOf, slotAssigned,
   slotCoverage, slotEnd, slotLabel, slotNeed, tagBonus,
@@ -63,7 +63,13 @@ export class Planning {
     const s = this.store.state(), slot = this.selected();
     if (!slot) return [];
     return s.people
-      .map((p) => ({ person: p, load: personSlots(s, p.id).length, reason: eligibility(s, p, slot), match: tagBonus(s, p, slot) }))
+      .map((p) => {
+        const brut = eligibility(s, p, slot);
+        // Sur un créneau à postes, être déjà placé n'exclut pas : on peut tenir
+        // l'autre poste, encore vacant.
+        const reason = isSalleConference(slot) && brut === 'déjà placé' ? null : brut;
+        return { person: p, load: personSlots(s, p.id).length, reason, match: tagBonus(s, p, slot) };
+      })
       .filter((c) => c.reason !== 'déjà placé')
       .sort((a, b) => b.match - a.match || a.load - b.load || a.person.nom.localeCompare(b.person.nom, 'fr'));
   });
@@ -81,10 +87,27 @@ export class Planning {
   protected end(x: Slot) { return minutesToTime(slotEnd(x)); }
   protected poste(x: Slot) { return isPoste(x); }
 
+  protected readonly ORDRE = ROLE_KEYS;
   protected roleAttendu(x: Slot) { return isSalleConference(x); }
-  protected captation(x: Slot) { return roleOf(this.store.state(), x, 'captation'); }
-  protected toggleCaptation(x: Slot, personId: string) {
-    this.store.setRole(x.id, 'captation', this.captation(x) === personId ? null : personId);
+  protected roleLabel(r: RoleKey) { return r === 'keeper' ? 'Time Keeper' : 'Captation'; }
+  protected titulaire(x: Slot, r: RoleKey): Person | null {
+    const id = roleOf(this.store.state(), x, r);
+    return id ? this.store.people().find((p) => p.id === id) ?? null : null;
+  }
+  /** Le poste est pris, ou la personne tient déjà l'autre poste du créneau. */
+  protected posteIndispo(x: Slot, r: RoleKey, personId: string) {
+    const st = this.store.state();
+    const autre: RoleKey = r === 'keeper' ? 'captation' : 'keeper';
+    return !!roleOf(st, x, r) || roleOf(st, x, autre) === personId;
+  }
+  protected placerAu(x: Slot, r: RoleKey, personId: string) {
+    this.store.assign(x.id, personId);
+    this.store.setRole(x.id, r, personId);
+  }
+  protected viderPoste(x: Slot, r: RoleKey) {
+    const id = roleOf(this.store.state(), x, r);
+    this.store.setRole(x.id, r, null);
+    if (id) this.store.unassign(x.id, id);
   }
 
   protected open(x: Slot) {

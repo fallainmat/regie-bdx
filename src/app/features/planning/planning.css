@@ -52,4 +52,8 @@
   .panel { position: static; max-height: none; }
   .hour { grid-template-columns: 1fr; }
 }
-.plist button.on { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); border-color: var(--ok); font-weight: 600; }
+.postes li { grid-template-columns: 96px 1fr auto; }
+.poste { font: 600 .78rem var(--body); text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.vacant { color: var(--miss); font-style: italic; }
+.actions { display: flex; gap: 6px; }
+.actions button[disabled] { opacity: .35; cursor: not-allowed; }

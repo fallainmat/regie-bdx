@@ -64,16 +64,27 @@
         <span class="hint">vide = règle du format ({{ fmt(x) }})</span>
       </label>
 
-      @if (assigned(x).length) {
+      @if (roleAttendu(x)) {
+        <h3>Rôles du créneau</h3>
+        <ul class="plist postes">
+          @for (r of ORDRE; track r) {
+            <li>
+              <span class="poste">{{ roleLabel(r) }}</span>
+              @if (titulaire(x, r); as t) {
+                <span class="nm">{{ t.nom }}</span>
+                <button class="ghost small" (click)="viderPoste(x, r)">Vider</button>
+              } @else {
+                <span class="nm vacant">à pourvoir</span>
+                <span></span>
+              }
+            </li>
+          }
+        </ul>
+      } @else if (assigned(x).length) {
         <h3>Placés</h3>
         <ul class="plist">
           @for (p of assigned(x); track p.id) {
             <li><span class="av">{{ initials(p.nom) }}</span><span class="nm">{{ p.nom }}</span>
-              @if (roleAttendu(x)) {
-                <button class="ghost small" [class.on]="captation(x) === p.id"
-                  [attr.aria-pressed]="captation(x) === p.id"
-                  (click)="toggleCaptation(x, p.id)">Captation</button>
-              }
               <button class="ghost small" (click)="store.unassign(x.id, p.id)">Retirer</button></li>
           }
         </ul>
@@ -89,7 +100,16 @@
             <span class="av">{{ initials(c.person.nom) }}</span>
             <span class="nm">{{ c.person.nom }} @if (c.match) { <em class="match">{{ c.match === 2 ? 'compétence' : 'salle' }}</em> }</span>
             <span class="ld">{{ c.load }} créneau{{ c.load > 1 ? 'x' : '' }}</span>
-            <button class="primary small" (click)="store.assign(x.id, c.person.id)">Placer</button>
+            @if (roleAttendu(x)) {
+              <span class="actions">
+                @for (r of ORDRE; track r) {
+                  <button class="primary small" [disabled]="posteIndispo(x, r, c.person.id)"
+                    (click)="placerAu(x, r, c.person.id)">{{ roleLabel(r) }}</button>
+                }
+              </span>
+            } @else {
+              <button class="primary small" (click)="store.assign(x.id, c.person.id)">Placer</button>
+            }
           </li>
         }
       </ul>
