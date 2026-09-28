@@ -173,7 +173,7 @@ export function autoAssign(state: RegieState, mode: 'fill' | 'all'): AutoResult 
   // Un créneau de salle déjà pourvu en personnes mais sans rôles doit être
   // visité : sans cela ses postes ne seraient jamais attribués.
   const aRemplir = (s: Slot) =>
-    isSalleConference(s) ? ROLE_KEYS.some((r) => !roleTaken(s, r)) : count(s) < need(s);
+    count(s) < need(s) || (isSalleConference(s) && ROLE_KEYS.some((r) => !roleTaken(s, r)));
 
   const pending = state.slots
     .filter(aRemplir)
@@ -213,15 +213,19 @@ export function autoAssign(state: RegieState, mode: 'fill' | 'all'): AutoResult 
         if (!best) continue;
         const b = best as Person;
         (roles[s.id] ??= {})[role] = b.id;
+        // Qualifier quelqu'un déjà présent n'est pas un placement : ne pas le
+        // compter, sous peine d'annoncer 160 personnes placées quand aucune
+        // n'a bougé.
         if (!(assign[s.id] ?? []).includes(b.id)) {
           (assign[s.id] ??= []).push(b.id);
           load[b.id]++;
           loadDay[b.id][s.jour] = (loadDay[b.id][s.jour] ?? 0) + 1;
           taken[b.id].push(s);
+          placed++;
         }
-        placed++;
       }
-      continue;
+      // Pas de `continue` : un créneau de salle dont le besoin dépasse 2 doit
+      // encore être complété au-delà de ses deux postes.
     }
     while (count(s) < need(s)) {
       let best: Person | null = null, bestScore = Infinity;

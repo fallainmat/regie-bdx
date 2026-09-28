@@ -321,6 +321,31 @@ describe('autoAssign — postes nommés', () => {
     expect([r.roles['s1'].keeper, r.roles['s1'].captation].sort()).toEqual(['p1', 'p2']);
   });
 
+  // L'écran Règles permet de porter un besoin au-delà de 2. Les deux postes ne
+  // doivent pas court-circuiter le complément d'effectif, sinon un tel créneau
+  // resterait incomplet à jamais.
+  it('complète l\'effectif au-delà des deux postes si le besoin l\'exige', () => {
+    const st = state({
+      people: [person('p1'), person('p2'), person('p3')],
+      slots: [slot('s1', { besoin: 3 })],
+    });
+    const r = autoAssign(st, 'fill');
+    expect(r.assign['s1'].length).toBe(3);
+    expect(r.roles['s1'].keeper).toBeDefined();
+    expect(r.roles['s1'].captation).toBeDefined();
+  });
+
+  // Après migration, les 80 créneaux ont déjà leurs personnes : qualifier n'est
+  // pas placer, et le rapport « N personnes placées » ne doit pas les compter.
+  it('ne compte pas une qualification comme un placement', () => {
+    const st = state({
+      people: [person('p1'), person('p2')],
+      slots: [slot('s1')],
+      assign: { s1: ['p1', 'p2'] },
+    });
+    expect(autoAssign(st, 'fill').placed).toBe(0);
+  });
+
   it('laisse les postes transverses sans rôles', () => {
     const a = slot('a', { salle: '', format: 'accueil', besoin: 1 });
     const st = state({ people: [person('p1')], slots: [a] });
