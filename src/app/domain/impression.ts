@@ -1,5 +1,5 @@
-import { Person, RegieState, RoleKey, ROLE_ABBR, ROLE_KEYS, ROLE_LABEL, Slot } from './model';
-import { Coverage, compareSlots, personSlots, roleOf, slotAssigned, slotCoverage, slotEnd, slotLabel, slotNeed } from './rules';
+import { Person, RegieState, RoleKey, ROLE_ABBR, ROLE_LABEL, Slot } from './model';
+import { Coverage, compareSlots, personSlots, roleDe, slotAssigned, slotCoverage, slotEnd, slotLabel, slotNeed } from './rules';
 import { minutesToTime } from './util';
 
 export interface LignePlanning {
@@ -99,11 +99,6 @@ export interface BlocPdf {
   titre: string;
   soustitre: string;
   sections: SectionPdf[];
-}
-
-/** Le poste tenu par une personne sur un créneau, s'il y en a un. */
-function roleDe(state: RegieState, s: Slot, personId: string): RoleKey | null {
-  return ROLE_KEYS.find((r) => roleOf(state, s, r) === personId) ?? null;
 }
 
 function horaire(s: Slot): string {

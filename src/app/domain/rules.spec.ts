@@ -1,6 +1,6 @@
 import { Person, RegieState, Slot } from './model';
 import { blankState } from './seed';
-import { autoAssign, diagnostics, eligibility, isSalleConference, roleOf, slotCoverage } from './rules';
+import { autoAssign, diagnostics, eligibility, isSalleConference, roleDe, roleOf, slotCoverage } from './rules';
 
 function person(id: string): Person {
   return { id, nom: id, email: '', role: '', tags: [], jours: [], maxCharge: 0, notes: '' };
@@ -358,5 +358,18 @@ describe('autoAssign — postes nommés', () => {
       assign: { s1: ['p1', 'p2'] }, roles: { s1: { captation: 'p2' } },
     });
     expect(autoAssign(st, 'fill').roles['s1'].captation).toBe('p2');
+  });
+});
+
+describe('roleDe', () => {
+  it('nomme le poste tenu, ou null si la personne n\'en tient aucun', () => {
+    const sl = slot('s1');
+    const st = state({
+      people: [person('p1'), person('p2'), person('p3')], slots: [sl],
+      assign: { s1: ['p1', 'p2', 'p3'] }, roles: { s1: { keeper: 'p2', captation: 'p1' } },
+    });
+    expect(roleDe(st, sl, 'p1')).toBe('captation');
+    expect(roleDe(st, sl, 'p2')).toBe('keeper');
+    expect(roleDe(st, sl, 'p3')).toBeNull();
   });
 });

@@ -302,6 +302,11 @@ export function coverage(state: RegieState, slots = state.slots) {
   return { need, have, ok, part, miss, slots: slots.length };
 }
 
+/** Le poste tenu par une personne sur un créneau, s'il y en a un. */
+export function roleDe(state: RegieState, s: Slot, personId: string): RoleKey | null {
+  return ROLE_KEYS.find((r) => roleOf(state, s, r) === personId) ?? null;
+}
+
 /** Les créneaux tenus en binôme keeper + captation : amphis et labs. */
 export function isSalleConference(s: Slot): boolean {
   return /amphi|^lab/i.test(s.salle);

@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RegieStore } from '../../state/regie.store';
 import { Person, RoleKey, ROLE_ABBR, ROLE_KEYS, ROLE_LABEL, Slot } from '../../domain/model';
 import {
-  compareSlots, eligibility, formatLabel, isPoste, isSalleConference, personSlots, roleOf, slotAssigned,
+  compareSlots, eligibility, formatLabel, isPoste, isSalleConference, personSlots, roleDe, roleOf, slotAssigned,
   slotCoverage, slotEnd, slotLabel, slotNeed, tagBonus,
 } from '../../domain/rules';
 import { initials, minutesToTime } from '../../domain/util';
@@ -91,11 +91,7 @@ export class Planning {
   protected roleAttendu(x: Slot) { return isSalleConference(x); }
   protected roleLabel(r: RoleKey) { return ROLE_LABEL[r]; }
   protected roleAbbr(r: RoleKey) { return ROLE_ABBR[r]; }
-  /** Le poste tenu par une personne sur ce créneau, s'il y en a un. */
-  protected roleDe(x: Slot, personId: string): RoleKey | null {
-    const st = this.store.state();
-    return ROLE_KEYS.find((r) => roleOf(st, x, r) === personId) ?? null;
-  }
+  protected roleDe(x: Slot, personId: string) { return roleDe(this.store.state(), x, personId); }
   protected titulaire(x: Slot, r: RoleKey): Person | null {
     const id = roleOf(this.store.state(), x, r);
     return id ? this.store.people().find((p) => p.id === id) ?? null : null;

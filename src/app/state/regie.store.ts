@@ -60,7 +60,9 @@ export class RegieStore {
     return r;
   }
   clearAssignments() {
-    this.patch(() => ({ assign: {} }));
+    // Même raison qu'à l'import : des rôles sans affectation s'accumulent en
+    // silence. Inertes grâce à roleOf, mais trompeurs dans la sauvegarde.
+    this.patch(() => ({ assign: {}, roles: {} }));
   }
 
   /* --- helpers -------------------------------------------------------- */
