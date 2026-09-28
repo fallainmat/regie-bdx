@@ -218,3 +218,17 @@ export function coverage(state: RegieState, slots = state.slots) {
   }
   return { need, have, ok, part, miss, slots: slots.length };
 }
+
+/** Vrai si la salle est "Amphi A", le périmètre des captations. */
+export function isSalleConference(s: Slot): boolean {
+  return s.salle === 'Amphi A';
+}
+
+/** La personne désignée pour la captation du créneau, ou null. */
+export function captationOf(state: RegieState, s: Slot): string | null {
+  const captator = state.captation[s.id];
+  if (!captator) return null;
+  const assigned = slotAssigned(state, s);
+  if (assigned.includes(captator)) return captator;
+  return null;
+}

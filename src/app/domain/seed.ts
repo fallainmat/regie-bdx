@@ -1,6 +1,8 @@
 import { Format, POSTE_KEYS, RegieState, Slot } from './model';
 import { parseTime, uid } from './util';
 
+
+export const FORMATION_KEY = 'formation';
 export const DEFAULT_FORMATS: Format[] = [
   { key: 'keynote', label: 'Keynote', need: 2 },
   { key: 'conference', label: 'Conférence', need: 2 },
@@ -10,7 +12,7 @@ export const DEFAULT_FORMATS: Format[] = [
   { key: 'tia', label: 'Tools-in-Action', need: 2 },
   { key: 'accueil', label: 'Accueil', need: 6 },
   { key: 'bagages', label: 'Bagages', need: 6 },
-  { key: 'formation', label: 'Formation captation', need: 10 },
+  { key: FORMATION_KEY, label: 'Formation captation', need: 10 },
   { key: 'autre', label: 'Autre', need: 1 },
 ];
 
@@ -145,7 +147,7 @@ export function seedFormation(jour: string): Slot[] {
       fin: parseTime('09:00'),
       salle: '',
       titre: 'Formation captation',
-      format: 'formation',
+      format: FORMATION_KEY,
       besoin: FORMATION_BESOIN,
     },
   ];
