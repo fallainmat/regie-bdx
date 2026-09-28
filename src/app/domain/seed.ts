@@ -10,6 +10,7 @@ export const DEFAULT_FORMATS: Format[] = [
   { key: 'tia', label: 'Tools-in-Action', need: 2 },
   { key: 'accueil', label: 'Accueil', need: 6 },
   { key: 'bagages', label: 'Bagages', need: 6 },
+  { key: 'formation', label: 'Formation captation', need: 10 },
   { key: 'autre', label: 'Autre', need: 1 },
 ];
 
@@ -124,8 +125,34 @@ export function seedPostes(jour: string, sessions: Slot[], keys: string[] = [...
   );
 }
 
+/** Besoin en helpers de la formation à la captation. */
+export const FORMATION_BESOIN = 10;
+
+/**
+ * Le jeudi matin s'ouvre par une formation à la captation, hors grille type.
+ * Son début est calé sur `POSTE_OUVERTURE` : `programmeBoundaries` ne retient
+ * que les débuts strictement postérieurs à l'ouverture, si bien que ce créneau
+ * ne coupe aucune vacation. Le décaler plus tard peut redécouper les postes —
+ * c'est ce que verrouille le test « ne modifie pas le découpage des vacations ».
+ */
+export function seedFormation(jour: string): Slot[] {
+  if (!/^jeudi/i.test(jour.trim())) return [];
+  return [
+    {
+      id: uid('s'),
+      jour,
+      debut: parseTime(POSTE_OUVERTURE),
+      fin: parseTime('09:00'),
+      salle: '',
+      titre: 'Formation captation',
+      format: 'formation',
+      besoin: FORMATION_BESOIN,
+    },
+  ];
+}
+
 export function seedDay(jour: string): Slot[] {
-  const sessions = seedSessions(jour);
+  const sessions = [...seedFormation(jour), ...seedSessions(jour)];
   return [...sessions, ...seedPostes(jour, sessions)];
 }
 
