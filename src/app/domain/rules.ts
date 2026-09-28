@@ -25,6 +25,10 @@ export function slotAssigned(state: RegieState, s: Slot): string[] {
 export type Coverage = 'ok' | 'part' | 'miss';
 export function slotCoverage(state: RegieState, s: Slot): Coverage {
   const n = slotNeed(state, s), a = slotAssigned(state, s).length;
+  // Un créneau de salle n'est complet que si ses deux postes sont tenus : deux
+  // personnes sans rôle attribué ne suffisent plus. Les créneaux sans salle
+  // gardent la règle d'effectif, sous peine d'être incomplétables.
+  if (isSalleConference(s) && ROLE_KEYS.some((r) => !roleOf(state, s, r))) return a > 0 ? 'part' : 'miss';
   if (a >= n) return 'ok';
   return a > 0 ? 'part' : 'miss';
 }
@@ -84,8 +88,14 @@ export function overlaps(a: Slot, b: Slot, gap: number): boolean {
 }
 
 /** null si la personne peut être placée sur le créneau, sinon la raison du refus. */
-export function eligibility(state: RegieState, p: Person, slot: Slot): string | null {
-  if (slotAssigned(state, slot).includes(p.id)) return 'déjà placé';
+export function eligibility(state: RegieState, p: Person, slot: Slot, role?: RoleKey): string | null {
+  if (role && isSalleConference(slot)) {
+    const tenant = roleOf(state, slot, role);
+    if (tenant && tenant !== p.id) return 'poste déjà tenu';
+  }
+  // Déjà sur le créneau : prendre un poste vacant n'y consomme aucune
+  // disponibilité supplémentaire, les plafonds et chevauchements la comptent déjà.
+  if (slotAssigned(state, slot).includes(p.id)) return role ? null : 'déjà placé';
   if (!personAvailable(p, slot.jour)) return 'absent ce jour';
   const mine = personSlots(state, p.id);
   if (mine.length >= personMax(state, p)) return 'plafond atteint';

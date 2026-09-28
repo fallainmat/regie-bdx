@@ -1,6 +1,6 @@
 import { Person, RegieState, Slot } from './model';
 import { blankState } from './seed';
-import { diagnostics, isSalleConference, roleOf } from './rules';
+import { diagnostics, eligibility, isSalleConference, roleOf, slotCoverage } from './rules';
 
 function person(id: string): Person {
   return { id, nom: id, email: '', role: '', tags: [], jours: [], maxCharge: 0, notes: '' };
@@ -195,5 +195,58 @@ describe('diagnostics — postes à pourvoir', () => {
     expect(d.under).toEqual([]);
     expect(d.missingRole).toEqual([]);
     expect(d.untrained).toEqual([]);
+  });
+});
+
+describe('slotCoverage — créneaux de salle', () => {
+  it('refuse « ok » à un créneau pourvu en personnes mais sans rôles', () => {
+    const s = slot('s1');
+    const st = state({ people: [person('p1'), person('p2')], slots: [s], assign: { s1: ['p1', 'p2'] } });
+    expect(slotCoverage(st, s)).not.toBe('ok');
+  });
+
+  it('accorde « ok » quand les deux postes sont tenus', () => {
+    const s = slot('s1');
+    const st = state({
+      people: [person('p1'), person('p2')], slots: [s], assign: { s1: ['p1', 'p2'] },
+      roles: { s1: { keeper: 'p2', captation: 'p1' } },
+    });
+    expect(slotCoverage(st, s)).toBe('ok');
+  });
+
+  // Les créneaux sans salle n'ont pas de postes : leur couverture reste
+  // purement quantitative, sous peine de les rendre incomplétables.
+  it('laisse les postes transverses à la règle d\'effectif', () => {
+    const s = slot('a', { salle: '', format: 'accueil', besoin: 1 });
+    const st = state({ people: [person('p1')], slots: [s], assign: { a: ['p1'] } });
+    expect(slotCoverage(st, s)).toBe('ok');
+  });
+});
+
+describe('eligibility — poste visé', () => {
+  it('refuse un poste déjà tenu par quelqu\'un d\'autre', () => {
+    const s = slot('s1');
+    const st = state({
+      people: [person('p1'), person('p2'), person('p3')], slots: [s],
+      assign: { s1: ['p1', 'p2'] }, roles: { s1: { captation: 'p1' } },
+    });
+    expect(eligibility(st, st.people[2], s, 'captation')).toBe('poste déjà tenu');
+    expect(eligibility(st, st.people[2], s, 'keeper')).toBeNull();
+  });
+
+  it('laisse le titulaire éligible à son propre poste', () => {
+    const s = slot('s1');
+    const st = state({
+      people: [person('p1'), person('p2')], slots: [s],
+      assign: { s1: ['p1', 'p2'] }, roles: { s1: { captation: 'p1' } },
+    });
+    expect(eligibility(st, st.people[0], s, 'captation')).toBeNull();
+  });
+
+  it('conserve les motifs existants', () => {
+    const s = slot('s1', { jour: 'Vendredi 30' });
+    const st = state({ days: ['Jeudi 29', 'Vendredi 30'], slots: [s] });
+    st.people = [{ ...person('p1'), jours: ['Jeudi 29'] }];
+    expect(eligibility(st, st.people[0], s, 'keeper')).toBe('absent ce jour');
   });
 });

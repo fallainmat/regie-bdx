@@ -193,13 +193,16 @@ describe('blocsPlanning — segmentation horaire', () => {
   it('marque chaque ligne par son état de couverture', () => {
     const s = state({
       days: ['Jeudi 29'],
-      people: [person({ id: 'a' })],
+      people: [person({ id: 'a' }), person({ id: 'b' })],
       slots: [
         slot({ id: 'vide', debut: 540, format: 'keynote' }),
         slot({ id: 'partiel', debut: 600, format: 'keynote', salle: 'Amphi A' }),
-        slot({ id: 'plein', debut: 660, besoin: 1, salle: 'Amphi B' }),
+        // Créneau de salle : « complet » exige désormais ses deux postes tenus,
+        // un effectif suffisant ne suffit plus.
+        slot({ id: 'plein', debut: 660, besoin: 2, salle: 'Amphi B' }),
       ],
-      assign: { partiel: ['a'], plein: ['a'] },
+      assign: { partiel: ['a'], plein: ['a', 'b'] },
+      roles: { plein: { keeper: 'b', captation: 'a' } },
     });
 
     const creneaux = blocsPlanning(s)[0].sections[0].lignes.filter((l) => !l.entete);
