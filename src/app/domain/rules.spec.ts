@@ -106,8 +106,23 @@ describe('diagnostics — captation à désigner', () => {
     expect(d.under.some((u) => u.slot.id === 's1')).toBe(true);
   });
 
-  it('ignore les créneaux hors salle', () => {
-    const st = avecFormation({ assign: { f: ['p1', 'p2'] } });
-    expect(diagnostics(st).unassignedRole.map((s) => s.id)).not.toContain('f');
+  // Ce test doit FALSIFIER le garde isSalleConference : les deux créneaux hors
+  // salle sont complets, l'un sans captation désignée, l'autre avec une captation
+  // non formée. Sans le garde, le premier remonterait dans unassignedRole et le
+  // second dans untrained.
+  it('ignore les créneaux hors salle pour les deux diagnostics', () => {
+    const formation = slot('f', { salle: '', format: 'formation', besoin: 1, debut: 480, fin: 540 });
+    const poste = slot('a', { salle: '', format: 'accueil', besoin: 1, debut: 480, fin: 540 });
+    const st = state({
+      days: ['Jeudi 29'],
+      people: [person('p1'), person('p2')],
+      slots: [formation, poste],
+      assign: { f: ['p1'], a: ['p2'] },
+      captation: { a: 'p2' },
+    });
+    const d = diagnostics(st);
+    expect(d.under).toEqual([]);
+    expect(d.unassignedRole).toEqual([]);
+    expect(d.untrained).toEqual([]);
   });
 });
