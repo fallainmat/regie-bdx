@@ -56,7 +56,7 @@ export class RegieStore {
   }
   runAuto(mode: 'fill' | 'all') {
     const r = autoAssign(this.state(), mode);
-    this.patch(() => ({ assign: r.assign }));
+    this.patch(() => ({ assign: r.assign, roles: r.roles }));
     return r;
   }
   clearAssignments() {

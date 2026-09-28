@@ -3,7 +3,7 @@
  * Tout est pur : chaque fonction lit un état et n'en modifie aucun,
  * sauf `autoAssign` qui renvoie une nouvelle table d'affectations.
  */
-import { Person, RegieState, RoleKey, ROLE_KEYS, Slot } from './model';
+import { Person, RegieState, RoleKey, ROLE_KEYS, SlotRoles, Slot } from './model';
 import { FORMATION_KEY, isPosteKey } from './seed';
 import { normKey } from './util';
 
@@ -123,6 +123,7 @@ export function tagBonus(state: RegieState, p: Person, s: Slot): number {
 
 export interface AutoResult {
   assign: Record<string, string[]>;
+  roles: Record<string, SlotRoles>;
   placed: number;
   gaps: number;
 }
@@ -133,9 +134,18 @@ export interface AutoResult {
  * puis les plus longs, puis ceux qui manquent le plus de monde.
  * Choix : score le plus bas = charge × 10 + charge du jour × 4 − bonus × 3.
  */
+/** Ordre de pourvoi des postes : le plus contraint d'abord. */
+const ORDRE_ATTRIBUTION: RoleKey[] = ['captation', 'keeper'];
+
 export function autoAssign(state: RegieState, mode: 'fill' | 'all'): AutoResult {
   const assign: Record<string, string[]> =
     mode === 'all' ? {} : Object.fromEntries(Object.entries(state.assign).map(([k, v]) => [k, [...v]]));
+  const roles: Record<string, SlotRoles> =
+    mode === 'all' ? {} : Object.fromEntries(Object.entries(state.roles).map(([k, v]) => [k, { ...v }]));
+  // Avoir suivi la formation ne dépend pas du jour : rapprochement sur la personne.
+  const formes = new Set(
+    state.slots.filter((x) => x.format === FORMATION_KEY).flatMap((x) => slotAssigned(state, x)),
+  );
   const gap = state.options.minGap;
   const load: Record<string, number> = {};
   const loadDay: Record<string, Record<string, number>> = {};
@@ -159,8 +169,14 @@ export function autoAssign(state: RegieState, mode: 'fill' | 'all'): AutoResult 
     (loadDay[p.id][s.jour] ?? 0) < dayMax(state) &&
     !taken[p.id].some((t) => overlaps(t, s, gap));
 
+  const roleTaken = (s: Slot, r: RoleKey) => roles[s.id]?.[r];
+  // Un créneau de salle déjà pourvu en personnes mais sans rôles doit être
+  // visité : sans cela ses postes ne seraient jamais attribués.
+  const aRemplir = (s: Slot) =>
+    isSalleConference(s) ? ROLE_KEYS.some((r) => !roleTaken(s, r)) : count(s) < need(s);
+
   const pending = state.slots
-    .filter((s) => count(s) < need(s))
+    .filter(aRemplir)
     .map((s) => ({
       s,
       cand: state.people.filter((p) => canPlace(p, s)).length,
@@ -172,6 +188,41 @@ export function autoAssign(state: RegieState, mode: 'fill' | 'all'): AutoResult 
 
   let placed = 0;
   for (const { s } of pending) {
+    if (isSalleConference(s)) {
+      // La captation d'abord : c'est le poste contraint, il veut quelqu'un qui a
+      // suivi la formation. Servir le keeper en premier lui ferait rafler la
+      // seule personne formée et laisserait la captation à quelqu'un qui ne l'est pas.
+      for (const role of ORDRE_ATTRIBUTION) {
+        if (roleTaken(s, role)) continue;
+        const autre = ROLE_KEYS.find((r) => r !== role)!;
+        // D'abord les personnes déjà présentes et sans poste : les qualifier ne
+        // consomme aucune disponibilité. On ne recrute qu'à défaut.
+        const dedans = (assign[s.id] ?? []).filter((id) => roleTaken(s, autre) !== id);
+        const vivier = dedans.length
+          ? state.people.filter((p) => dedans.includes(p.id))
+          : state.people.filter((p) => canPlace(p, s));
+        let best: Person | null = null, bestScore = Infinity;
+        vivier.forEach((p, i) => {
+          // La captation revient de préférence à quelqu'un qui a suivi la
+          // formation ; à défaut on place quand même, le diagnostic signalera.
+          const prefer = role === 'captation' && formes.has(p.id) ? -100 : 0;
+          const score = prefer + load[p.id] * 10 + (loadDay[p.id][s.jour] ?? 0) * 4
+            - tagBonus(state, p, s) * 3 + (i % 3) * 0.01;
+          if (score < bestScore) { bestScore = score; best = p; }
+        });
+        if (!best) continue;
+        const b = best as Person;
+        (roles[s.id] ??= {})[role] = b.id;
+        if (!(assign[s.id] ?? []).includes(b.id)) {
+          (assign[s.id] ??= []).push(b.id);
+          load[b.id]++;
+          loadDay[b.id][s.jour] = (loadDay[b.id][s.jour] ?? 0) + 1;
+          taken[b.id].push(s);
+        }
+        placed++;
+      }
+      continue;
+    }
     while (count(s) < need(s)) {
       let best: Person | null = null, bestScore = Infinity;
       state.people.forEach((p, i) => {
@@ -189,7 +240,7 @@ export function autoAssign(state: RegieState, mode: 'fill' | 'all'): AutoResult 
     }
   }
   const gaps = state.slots.reduce((n, s) => n + Math.max(0, need(s) - count(s)), 0);
-  return { assign, placed, gaps };
+  return { assign, roles, placed, gaps };
 }
 
 export interface Diagnostics {

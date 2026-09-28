@@ -1,6 +1,6 @@
 import { Person, RegieState, Slot } from './model';
 import { blankState } from './seed';
-import { diagnostics, eligibility, isSalleConference, roleOf, slotCoverage } from './rules';
+import { autoAssign, diagnostics, eligibility, isSalleConference, roleOf, slotCoverage } from './rules';
 
 function person(id: string): Person {
   return { id, nom: id, email: '', role: '', tags: [], jours: [], maxCharge: 0, notes: '' };
@@ -243,10 +243,95 @@ describe('eligibility — poste visé', () => {
     expect(eligibility(st, st.people[0], s, 'captation')).toBeNull();
   });
 
+  // La subtilité que le code commente : déjà sur le créneau, on reste éligible à
+  // un poste vacant. Sans ce garde, le contrôle de chevauchement refuserait la
+  // personne contre son PROPRE créneau.
+  it('laisse une personne déjà placée prendre l\'autre poste, vacant', () => {
+    const s = slot('s1');
+    const st = state({
+      people: [person('p1'), person('p2')], slots: [s],
+      assign: { s1: ['p1', 'p2'] }, roles: { s1: { captation: 'p1' } },
+    });
+    expect(eligibility(st, st.people[1], s, 'keeper')).toBeNull();
+  });
+
   it('conserve les motifs existants', () => {
     const s = slot('s1', { jour: 'Vendredi 30' });
     const st = state({ days: ['Jeudi 29', 'Vendredi 30'], slots: [s] });
     st.people = [{ ...person('p1'), jours: ['Jeudi 29'] }];
     expect(eligibility(st, st.people[0], s, 'keeper')).toBe('absent ce jour');
+  });
+});
+
+describe('autoAssign — postes nommés', () => {
+  /** Formation à 08:00, et deux vacations de poste hors des heures du créneau. */
+  function avecCharges(chargeDe: string): { slots: Slot[]; assign: Record<string, string[]> } {
+    return {
+      slots: [
+        slot('f', { salle: '', format: 'formation', besoin: 1, debut: 480, fin: 540 }),
+        slot('x1', { salle: '', format: 'accueil', besoin: 1, debut: 700, fin: 760 }),
+        slot('x2', { salle: '', format: 'accueil', besoin: 1, debut: 800, fin: 860 }),
+        slot('s1'),
+      ],
+      assign: { f: ['p1'], x1: [chargeDe], x2: [chargeDe] },
+    };
+  }
+
+  // p1 est formée mais lourdement chargée : sans la préférence, le score de
+  // charge donnerait la captation à p2. Ce test falsifie la préférence.
+  it('préfère une personne formée pour la captation, même plus chargée', () => {
+    const st = state({ people: [person('p1'), person('p2')], ...avecCharges('p1') });
+    expect(autoAssign(st, 'fill').roles['s1'].captation).toBe('p1');
+  });
+
+  // p1 est formée ET la moins chargée : si le keeper était pourvu en premier,
+  // il la prendrait et la captation reviendrait à p2, non formée.
+  // Ce test falsifie l'ordre d'attribution.
+  it('pourvoit la captation avant le keeper', () => {
+    const st = state({ people: [person('p1'), person('p2')], ...avecCharges('p2') });
+    const r = autoAssign(st, 'fill');
+    expect(r.roles['s1'].captation).toBe('p1');
+    expect(r.roles['s1'].keeper).toBe('p2');
+  });
+
+  it('place quand même une personne non formée plutôt que laisser le poste vide', () => {
+    const st = state({ people: [person('p1'), person('p2')], slots: [slot('s1')] });
+    const r = autoAssign(st, 'fill');
+    expect(r.roles['s1'].captation).toBeDefined();
+    expect(r.roles['s1'].keeper).toBeDefined();
+  });
+
+  it('ne donne pas les deux postes à la même personne', () => {
+    const st = state({ people: [person('p1'), person('p2')], slots: [slot('s1')] });
+    const r = autoAssign(st, 'fill');
+    expect(r.roles['s1'].keeper).not.toBe(r.roles['s1'].captation);
+  });
+
+  // LE cas de la migration : les personnes sont déjà là, seuls les rôles
+  // manquent. autoAssign doit les qualifier, pas recruter à l'extérieur.
+  // Sans le filtre d'incomplétude de rôle, ce créneau ne serait même pas visité.
+  it('qualifie les personnes déjà en place plutôt que d\'en ajouter', () => {
+    const st = state({
+      people: [person('p1'), person('p2'), person('p3')],
+      slots: [slot('s1')],
+      assign: { s1: ['p1', 'p2'] },
+    });
+    const r = autoAssign(st, 'fill');
+    expect([...r.assign['s1']].sort()).toEqual(['p1', 'p2']);
+    expect([r.roles['s1'].keeper, r.roles['s1'].captation].sort()).toEqual(['p1', 'p2']);
+  });
+
+  it('laisse les postes transverses sans rôles', () => {
+    const a = slot('a', { salle: '', format: 'accueil', besoin: 1 });
+    const st = state({ people: [person('p1')], slots: [a] });
+    expect(autoAssign(st, 'fill').roles['a']).toBeUndefined();
+  });
+
+  it('respecte les postes déjà attribués en mode fill', () => {
+    const st = state({
+      people: [person('p1'), person('p2')], slots: [slot('s1')],
+      assign: { s1: ['p1', 'p2'] }, roles: { s1: { captation: 'p2' } },
+    });
+    expect(autoAssign(st, 'fill').roles['s1'].captation).toBe('p2');
   });
 });
