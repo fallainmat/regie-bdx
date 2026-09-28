@@ -112,8 +112,8 @@ vacant est désormais une incomplétude, et les deux listes se répondent.
 remplace la liste « Placés » :
 
 ```
-Time Keeper   Elise Marcillaud      [Changer] [Vider]
-Captation     Sebastien Moreno      [Changer] [Vider]
+Time Keeper   Camille Roux          [Changer] [Vider]
+Captation     Dominique Ferrand     [Changer] [Vider]
 ```
 
 Un poste vacant affiche un emplacement vide explicite, pas une absence de ligne.
