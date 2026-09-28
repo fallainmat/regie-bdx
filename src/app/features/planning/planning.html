@@ -33,7 +33,10 @@
               @if (assigned(x).length) {
                 <ul class="chips">
                   @for (p of assigned(x); track p.id) {
-                    <li><button class="chip" (click)="store.unassign(x.id, p.id)" [title]="'Retirer ' + p.nom + ' de ce créneau'">{{ p.nom }} <span aria-hidden="true">×</span></button></li>
+                    <li><button class="chip"
+                      [class.tk]="roleDe(x, p.id) === 'keeper'" [class.ca]="roleDe(x, p.id) === 'captation'"
+                      (click)="store.unassign(x.id, p.id)"
+                      [title]="(roleDe(x, p.id) ? roleLabel($any(roleDe(x, p.id))) + ' — ' : '') + 'Retirer ' + p.nom + ' de ce créneau'">@if (roleDe(x, p.id); as r) {<span class="tag">{{ roleAbbr(r) }}</span>}{{ p.nom }} <span aria-hidden="true">×</span></button></li>
                   }
                 </ul>
               }

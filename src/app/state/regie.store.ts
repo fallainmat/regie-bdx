@@ -67,7 +67,10 @@ export class RegieStore {
   importPeople(data: unknown, mode: 'replace' | 'merge'): number {
     const incoming = parsePeople(data);
     this.patch((s) => {
-      if (mode === 'replace') return { people: incoming, assign: {} };
+      // Les rôles désignent des personnes par id : remplacer la liste régénère
+      // les ids, et les laisser derrière accumulerait des postes pointant dans
+      // le vide. Inertes grâce à roleOf, mais trompeurs dans la sauvegarde.
+      if (mode === 'replace') return { people: incoming, assign: {}, roles: {} };
       const byName = new Set(s.people.map((p) => p.nom.toLowerCase()));
       return { people: [...s.people, ...incoming.filter((p) => !byName.has(p.nom.toLowerCase()))] };
     });
@@ -84,6 +87,12 @@ export class RegieStore {
       people: s.people.filter((p) => p.id !== id),
       assign: Object.fromEntries(
         Object.entries(s.assign).map(([k, v]) => [k, v.filter((x) => x !== id)] as const).filter(([, v]) => v.length),
+      ),
+      // Même raison : ne pas laisser de postes tenus par quelqu'un qui n'existe plus.
+      roles: Object.fromEntries(
+        Object.entries(s.roles)
+          .map(([k, v]) => [k, Object.fromEntries(Object.entries(v).filter(([, pid]) => pid !== id))] as const)
+          .filter(([, v]) => Object.keys(v).length),
       ),
     }));
   }

@@ -45,6 +45,10 @@ export interface Options {
 export type RoleKey = 'keeper' | 'captation';
 export const ROLE_KEYS: RoleKey[] = ['keeper', 'captation'];
 
+/** Libellés des postes : une seule source, pour que grille, PDF et contrôles s'accordent. */
+export const ROLE_LABEL: Record<RoleKey, string> = { keeper: 'Time Keeper', captation: 'Captation' };
+export const ROLE_ABBR: Record<RoleKey, string> = { keeper: 'TK', captation: 'CA' };
+
 /** Les deux postes d'un créneau de salle ; absents tant qu'ils ne sont pas pourvus. */
 export interface SlotRoles {
   keeper?: string;

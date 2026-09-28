@@ -238,6 +238,51 @@ describe('blocsFeuilles', () => {
     const blocs = blocsFeuilles(s);
     expect(blocs.map((b) => b.titre)).toEqual(['Ada Lovelace']);
     expect(blocs[0].sections.map((sec) => sec.titre)).toEqual(['Jeudi 29', 'Vendredi 30']);
-    expect(blocs[0].sections[0].lignes).toEqual([{ cellules: ['09:00 – 09:55', 'Keynote — Amphi A'] }]);
+    // Sans rôle attribué, la colonne Rôle porte un tiret plutôt que de disparaître.
+    expect(blocs[0].sections[0].lignes).toEqual([{ cellules: ['09:00 – 09:55', 'Keynote — Amphi A', '—'] }]);
+  });
+});
+
+describe('impression — rôles des créneaux de salle', () => {
+  const deux = () => state({
+    days: ['Jeudi 29'],
+    people: [person({ id: 'a', nom: 'Ada Lovelace' }), person({ id: 'g', nom: 'Grace Hopper' })],
+    slots: [slot({ id: 'k', salle: 'Amphi A', format: 'keynote', besoin: 2 })],
+    assign: { k: ['a', 'g'] },
+    roles: { k: { keeper: 'a', captation: 'g' } },
+  });
+
+  it('accole son abréviation de rôle à chaque nom du planning', () => {
+    const l = blocsPlanning(deux())[0].sections[0].lignes[1];
+    expect(l.cellules[2]).toBe('Ada Lovelace (TK), Grace Hopper (CA)');
+  });
+
+  it('laisse nu un nom sans rôle, et conserve le reste à pourvoir', () => {
+    const s = state({
+      days: ['Jeudi 29'],
+      people: [person({ id: 'a', nom: 'Ada Lovelace' }), person({ id: 'g', nom: 'Grace Hopper' })],
+      slots: [slot({ id: 'k', salle: 'Amphi A', format: 'keynote', besoin: 2 })],
+      assign: { k: ['a', 'g'] },
+      roles: { k: { captation: 'g' } },
+    });
+    expect(blocsPlanning(s)[0].sections[0].lignes[1].cellules[2]).toBe('Ada Lovelace, Grace Hopper (CA)');
+  });
+
+  it('donne une colonne Rôle aux feuilles de route', () => {
+    const section = blocsFeuilles(deux())[0].sections[0];
+    expect(section.entetes).toEqual(['Horaire', 'Créneau', 'Rôle']);
+    expect(section.lignes[0].cellules[2]).toBe('Time Keeper');
+  });
+
+  // Postes transverses et formation n'ont pas de rôles : la colonne doit rester
+  // alignée, pas disparaître.
+  it('marque d\'un tiret les créneaux sans poste', () => {
+    const s = state({
+      days: ['Jeudi 29'],
+      people: [person({ id: 'a', nom: 'Ada Lovelace' })],
+      slots: [slot({ id: 'x', salle: '', format: 'accueil', besoin: 1 })],
+      assign: { x: ['a'] },
+    });
+    expect(blocsFeuilles(s)[0].sections[0].lignes[0].cellules[2]).toBe('—');
   });
 });

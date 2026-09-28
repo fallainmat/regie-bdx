@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { RegieStore } from '../../state/regie.store';
 import { slotEnd, slotLabel } from '../../domain/rules';
-import { Slot } from '../../domain/model';
+import { RoleKey, ROLE_LABEL, Slot } from '../../domain/model';
 import { minutesToTime } from '../../domain/util';
 
 @Component({
@@ -48,7 +48,7 @@ import { minutesToTime } from '../../domain/util';
         <h2 class="mt">Postes à pourvoir <span class="n">{{ d.missingRole.length }}</span></h2>
         <ul>
           @for (m of d.missingRole; track m.slot.id + m.role) {
-            <li><span>{{ when(m.slot) }} · {{ label(m.slot) }}</span><b class="miss">{{ m.role === 'keeper' ? 'Time Keeper' : 'Captation' }}</b></li>
+            <li><span>{{ when(m.slot) }} · {{ label(m.slot) }}</span><b class="miss">{{ roleLabel(m.role) }}</b></li>
           } @empty { <li class="none">Aucun.</li> }
         </ul>
       </section>
@@ -75,4 +75,5 @@ export class Controles {
   });
   protected when(s: Slot) { return `${s.jour} ${minutesToTime(s.debut)}–${minutesToTime(slotEnd(s))}`; }
   protected label(s: Slot) { return slotLabel(this.store.state(), s); }
+  protected roleLabel(r: RoleKey) { return ROLE_LABEL[r]; }
 }

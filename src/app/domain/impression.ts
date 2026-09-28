@@ -1,5 +1,5 @@
-import { Person, RegieState, Slot } from './model';
-import { Coverage, compareSlots, personSlots, slotAssigned, slotCoverage, slotEnd, slotLabel, slotNeed } from './rules';
+import { Person, RegieState, RoleKey, ROLE_ABBR, ROLE_KEYS, ROLE_LABEL, Slot } from './model';
+import { Coverage, compareSlots, personSlots, roleOf, slotAssigned, slotCoverage, slotEnd, slotLabel, slotNeed } from './rules';
 import { minutesToTime } from './util';
 
 export interface LignePlanning {
@@ -43,6 +43,8 @@ export function planningParJour(state: RegieState): PagePlanning[] {
 export interface LigneRoute {
   slot: Slot;
   libelle: string;
+  /** Poste tenu sur ce créneau ; null sur les créneaux qui n'en portent pas. */
+  role: RoleKey | null;
 }
 
 export interface JourneeRoute {
@@ -65,7 +67,7 @@ export function feuillesDeRoute(state: RegieState): FeuilleRoute[] {
           jour,
           lignes: slots
             .filter((s) => s.jour === jour)
-            .map((s) => ({ slot: s, libelle: slotLabel(state, s) })),
+            .map((s) => ({ slot: s, libelle: slotLabel(state, s), role: roleDe(state, s, person.id) })),
         }))
         .filter((j) => j.lignes.length > 0);
       return { person, journees, total: slots.length };
@@ -99,12 +101,22 @@ export interface BlocPdf {
   sections: SectionPdf[];
 }
 
+/** Le poste tenu par une personne sur un créneau, s'il y en a un. */
+function roleDe(state: RegieState, s: Slot, personId: string): RoleKey | null {
+  return ROLE_KEYS.find((r) => roleOf(state, s, r) === personId) ?? null;
+}
+
 function horaire(s: Slot): string {
   return `${minutesToTime(s.debut)} – ${minutesToTime(slotEnd(s))}`;
 }
 
-function equipe(l: LignePlanning): string {
-  const noms = l.personnes.map((p) => p.nom).join(', ');
+function equipe(state: RegieState, l: LignePlanning): string {
+  const noms = l.personnes
+    .map((p) => {
+      const r = roleDe(state, l.slot, p.id);
+      return r ? `${p.nom} (${ROLE_ABBR[r]})` : p.nom;
+    })
+    .join(', ');
   const reste = l.manque ? `+${l.manque} à pourvoir` : '';
   if (!noms) return reste ? `— ${l.manque} à pourvoir` : '—';
   return reste ? `${noms} · ${reste}` : noms;
@@ -129,7 +141,7 @@ function segmenter(state: RegieState, lignes: LignePlanning[]): LignePdf[] {
     }
     out.push({
       // « jusqu'à » lève l'ambiguïté avec l'heure de début portée par la bande.
-      cellules: [`jusqu’à ${minutesToTime(slotEnd(l.slot)) || '—'}`, l.libelle, equipe(l)],
+      cellules: [`jusqu’à ${minutesToTime(slotEnd(l.slot)) || '—'}`, l.libelle, equipe(state, l)],
       bande,
       couverture: slotCoverage(state, l.slot),
     });
@@ -156,8 +168,8 @@ export function blocsFeuilles(state: RegieState): BlocPdf[] {
     soustitre: `${state.nom} — ${f.total} créneau${f.total > 1 ? 'x' : ''}`,
     sections: f.journees.map((j) => ({
       titre: j.jour,
-      entetes: ['Horaire', 'Créneau'],
-      lignes: j.lignes.map((l) => ({ cellules: [horaire(l.slot), l.libelle] })),
+      entetes: ['Horaire', 'Créneau', 'Rôle'],
+      lignes: j.lignes.map((l) => ({ cellules: [horaire(l.slot), l.libelle, l.role ? ROLE_LABEL[l.role] : '—'] })),
     })),
   }));
 }

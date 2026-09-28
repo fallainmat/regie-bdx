@@ -26,7 +26,13 @@
 .count b { font-size: 1.35rem; color: var(--ink); }
 .chips { list-style: none; margin: 0; padding: 0 8px 8px; display: flex; flex-wrap: wrap; gap: 4px; }
 .chip { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 2px 8px; font-size: .78rem; cursor: pointer; }
+.chip .tag { font-weight: 700; font-size: .72rem; letter-spacing: .03em; margin-right: 4px; }
+.chip.tk { border-color: color-mix(in srgb, var(--ink) 35%, var(--line)); }
+.chip.tk .tag { color: var(--ink); }
+.chip.ca { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.chip.ca .tag { color: var(--accent); }
 .chip:hover { border-color: var(--miss); color: var(--miss); }
+.chip:hover .tag { color: var(--miss); }
 .empty { padding: 40px 0; color: var(--muted); }
 
 .panel { position: sticky; top: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; max-height: calc(100vh - 32px); overflow: auto; }
