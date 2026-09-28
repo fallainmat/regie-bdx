@@ -15,21 +15,21 @@ function state(over: Partial<RegieState> = {}): RegieState {
 }
 
 describe('isSalleConference', () => {
-  it('returns true for Amphi A', () => {
+  it('retient les amphis et les labs', () => {
     expect(isSalleConference(slot('a', { salle: 'Amphi A' }))).toBe(true);
+    expect(isSalleConference(slot('b', { salle: 'Grand amphi' }))).toBe(true);
+    expect(isSalleConference(slot('c', { salle: 'Lab' }))).toBe(true);
+    expect(isSalleConference(slot('d', { salle: 'Lab 2' }))).toBe(true);
   });
 
-  it('returns false for other rooms', () => {
-    expect(isSalleConference(slot('b', { salle: 'Grand amphi' }))).toBe(false);
-  });
-
-  it('returns false for non-conference rooms', () => {
-    expect(isSalleConference(slot('c', { salle: 'Lab' }))).toBe(false);
+  it('écarte les créneaux sans salle : postes et formation', () => {
+    expect(isSalleConference(slot('e', { salle: '', format: 'accueil' }))).toBe(false);
+    expect(isSalleConference(slot('f', { salle: '', format: 'formation' }))).toBe(false);
   });
 });
 
 describe('captationOf', () => {
-  it('returns the person designated for captation if they are assigned to the slot', () => {
+  it('renvoie la personne désignée quand elle est affectée au créneau', () => {
     const s = slot('s1');
     const st = state({
       people: [person('p1'), person('p2')],
@@ -40,7 +40,9 @@ describe('captationOf', () => {
     expect(captationOf(st, s)).toBe('p1');
   });
 
-  it('ignores a designation if the person is not assigned to the slot', () => {
+  // Le scénario « Tout refaire » : autoAssign remplace assign en bloc et
+  // ne touche pas aux rôles. La désignation devenue caduque doit être ignorée.
+  it('ignore une désignation dont la personne a quitté le créneau', () => {
     const s = slot('s1');
     const st = state({
       people: [person('p1'), person('p2')],
@@ -51,24 +53,9 @@ describe('captationOf', () => {
     expect(captationOf(st, s)).toBeNull();
   });
 
-  it('ignores a stale designation when the person has left the slot', () => {
+  it('renvoie null quand aucune captation n\'est désignée', () => {
     const s = slot('s1');
-    const st = state({
-      people: [person('p1'), person('p2')],
-      slots: [s],
-      assign: { s1: ['p2'] },
-      captation: { s1: 'p1' },
-    });
-    expect(captationOf(st, s)).toBeNull();
-  });
-
-  it('returns null when no captation is designated', () => {
-    const s = slot('s1');
-    const st = state({
-      people: [person('p1')],
-      slots: [s],
-      assign: { s1: ['p1'] },
-    });
+    const st = state({ people: [person('p1')], slots: [s], assign: { s1: ['p1'] } });
     expect(captationOf(st, s)).toBeNull();
   });
 });

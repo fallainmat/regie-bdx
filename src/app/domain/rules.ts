@@ -219,12 +219,18 @@ export function coverage(state: RegieState, slots = state.slots) {
   return { need, have, ok, part, miss, slots: slots.length };
 }
 
-/** Vrai si la salle est "Amphi A", le périmètre des captations. */
+/** Les créneaux tenus en binôme keeper + captation : amphis et labs. */
 export function isSalleConference(s: Slot): boolean {
-  return s.salle === 'Amphi A';
+  return /amphi|^lab/i.test(s.salle);
 }
 
-/** La personne désignée pour la captation du créneau, ou null. */
+/**
+ * La captation d'un créneau, si elle y est toujours affectée.
+ * `autoAssign` remplace la table d'affectations en bloc sans toucher aux rôles,
+ * et n'en repose aucun : cette validation à la lecture est le seul rempart
+ * contre les désignations devenues caduques. Aucun appelant ne doit lire
+ * `state.captation` directement.
+ */
 export function captationOf(state: RegieState, s: Slot): string | null {
   const captator = state.captation[s.id];
   if (!captator) return null;
