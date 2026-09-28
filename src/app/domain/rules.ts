@@ -4,7 +4,7 @@
  * sauf `autoAssign` qui renvoie une nouvelle table d'affectations.
  */
 import { Person, RegieState, Slot } from './model';
-import { isPosteKey } from './seed';
+import { FORMATION_KEY, isPosteKey } from './seed';
 import { normKey } from './util';
 
 export function formatOf(state: RegieState, key: string) {
@@ -187,13 +187,30 @@ export interface Diagnostics {
   conflicts: { person: Person; a: Slot; b: Slot }[];
   idle: Person[];
   over: { person: Person; n: number; max: number }[];
+  /** Captation désignée mais qui n'a pas suivi la formation. */
+  untrained: { slot: Slot; person: Person }[];
+  /** Créneau de salle complet dont la captation n'est pas désignée. */
+  unassignedRole: Slot[];
 }
 
 export function diagnostics(state: RegieState): Diagnostics {
-  const d: Diagnostics = { under: [], conflicts: [], idle: [], over: [] };
+  const d: Diagnostics = { under: [], conflicts: [], idle: [], over: [], untrained: [], unassignedRole: [] };
+  // Avoir suivi la formation ne dépend pas du jour du créneau évalué :
+  // le rapprochement se fait sur la personne.
+  const formes = new Set(
+    state.slots.filter((s) => s.format === FORMATION_KEY).flatMap((s) => slotAssigned(state, s)),
+  );
   for (const s of [...state.slots].sort(compareSlots(state.days))) {
     const miss = slotNeed(state, s) - slotAssigned(state, s).length;
     if (miss > 0) d.under.push({ slot: s, miss });
+    if (!isSalleConference(s)) continue;
+    const id = captationOf(state, s);
+    if (!id) {
+      if (slotCoverage(state, s) === 'ok') d.unassignedRole.push(s);
+    } else if (!formes.has(id)) {
+      const person = state.people.find((p) => p.id === id);
+      if (person) d.untrained.push({ slot: s, person });
+    }
   }
   for (const p of state.people) {
     const mine = personSlots(state, p.id);
