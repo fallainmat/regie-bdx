@@ -28,6 +28,7 @@ function state(over: Partial<RegieState> = {}): RegieState {
     people: [],
     slots: [],
     assign: {},
+    captation: {},
     ...over,
   };
 }

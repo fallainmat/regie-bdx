@@ -166,5 +166,6 @@ export function blankState(): RegieState {
     people: [],
     slots: DEFAULT_DAYS.flatMap(seedDay),
     assign: {},
+    captation: {},
   };
 }

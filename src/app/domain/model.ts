@@ -52,6 +52,8 @@ export interface RegieState {
   slots: Slot[];
   /** slotId -> liste d'ids de personnes. */
   assign: Record<string, string[]>;
+  /** slotId -> id de la personne qui assure la captation ; le keeper est l'autre. */
+  captation: Record<string, string>;
 }
 
 /** Les postes transverses, découpés en vacations sur la journée. */
