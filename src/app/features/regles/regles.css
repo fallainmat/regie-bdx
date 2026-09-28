@@ -1,0 +1,15 @@
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 32px; }
+h2 { font: 600 1.35rem/1.1 var(--display); margin: 0 0 8px; }
+.mt { margin-top: 28px; }
+.note { color: var(--muted); font-size: .85rem; max-width: 70ch; }
+table { border-collapse: collapse; width: 100%; max-width: 360px; }
+th { text-align: left; font-weight: 500; padding: 6px 0; border-bottom: 1px solid var(--line); }
+td { text-align: right; border-bottom: 1px solid var(--line); }
+td input { width: 64px; text-align: right; }
+.opt { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.opt small { grid-column: 1 / -1; color: var(--muted); }
+.field input { width: 64px; text-align: right; }
+.days { list-style: none; padding: 0; margin: 0 0 10px; display: grid; gap: 6px; }
+.line { display: flex; gap: 8px; flex-wrap: wrap; }
+.how { margin-top: 36px; padding-top: 20px; border-top: 2px solid var(--ink); }
+.how ol { max-width: 72ch; padding-left: 20px; display: grid; gap: 10px; line-height: 1.55; }

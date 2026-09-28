@@ -1,0 +1,67 @@
+<section class="intake">
+  <div class="card">
+    <h2>Importer une liste</h2>
+    <p class="note">Un fichier JSON : une liste de noms, ou d’objets avec <code>nom</code>, <code>jours</code>, <code>tags</code>, <code>max</code>. Les clés anglaises sont reconnues aussi.</p>
+    <div class="line">
+      <select [value]="importMode()" (change)="importMode.set($any($event.target).value)" aria-label="Mode d’import">
+        <option value="merge">Ajouter aux helpers actuels</option>
+        <option value="replace">Remplacer (efface les affectations)</option>
+      </select>
+      <label class="primary filebtn">Choisir un fichier JSON<input type="file" accept=".json,application/json" (change)="onFile($event)" /></label>
+    </div>
+    @if (error()) { <p class="err" role="alert">{{ error() }}</p> }
+    @if (info()) { <p class="ok" role="status">{{ info() }}</p> }
+    <details><summary>Exemple de fichier</summary><pre>{{ sample }}</pre></details>
+  </div>
+
+  <form class="card" (submit)="$event.preventDefault(); add(nom, jours, tags)">
+    <h2>Ajouter un helper</h2>
+    <label>Nom<input #nom required autocomplete="off" /></label>
+    <label>Jours de présence <span class="hint">vide = tous les jours</span><input #jours [placeholder]="store.days().join(', ')" /></label>
+    <label>Compétences ou salles<input #tags placeholder="accueil, Amphi A" /></label>
+    <button class="primary" type="submit">Ajouter</button>
+  </form>
+</section>
+
+<div class="listhead">
+  <h2>{{ store.people().length }} helper{{ store.people().length > 1 ? 's' : '' }}</h2>
+  <input type="search" placeholder="Chercher un nom, une compétence…" [value]="query()" (input)="query.set($any($event.target).value)" aria-label="Chercher un helper" />
+</div>
+
+@if (!store.people().length) {
+  <p class="empty">Aucun helper pour l’instant. Importe ta liste ou ajoute-les un par un.</p>
+} @else {
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Nom</th><th>Jours</th><th>Compétences</th><th class="num">Charge</th><th class="num">Plafond</th><th></th></tr></thead>
+      <tbody>
+        @for (r of rows(); track r.p.id) {
+          <tr [class.over]="r.slots.length > r.max">
+            <td>
+              <button class="link name" (click)="openId.set(openId() === r.p.id ? null : r.p.id)" [attr.aria-expanded]="openId() === r.p.id">
+                <span class="av">{{ initials(r.p.nom) }}</span>{{ r.p.nom }}
+              </button>
+            </td>
+            <td>{{ r.p.jours.length ? r.p.jours.join(', ') : 'Tous' }}</td>
+            <td>{{ r.p.tags.join(', ') }}</td>
+            <td class="num"><span class="bar"><i [style.width.%]="(r.slots.length / maxLoad()) * 100"></i></span>{{ r.slots.length }}</td>
+            <td class="num"><input type="number" min="0" [value]="r.p.maxCharge || ''" [placeholder]="maxText(r.max)" (change)="setMax(r.p, $any($event.target).value)" [attr.aria-label]="'Plafond de ' + r.p.nom" /></td>
+            <td><button class="ghost small" (click)="remove(r.p)">Retirer</button></td>
+          </tr>
+          @if (openId() === r.p.id) {
+            <tr class="detail"><td colspan="6">
+              @if (r.slots.length) {
+                <ol class="road">
+                  @for (sl of r.slots; track sl.id) {
+                    <li><time>{{ sl.jour }} {{ time(sl.debut) }}–{{ end(sl) }}</time> {{ label(sl) }}
+                      <button class="link" (click)="store.unassign(sl.id, r.p.id)">retirer</button></li>
+                  }
+                </ol>
+              } @else { <span class="note">Aucun créneau pour l’instant.</span> }
+            </td></tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+}

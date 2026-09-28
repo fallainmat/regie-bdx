@@ -1,0 +1,106 @@
+<div class="toolbar">
+  <div class="days" role="tablist" aria-label="Journées">
+    @for (d of store.days(); track d) {
+      <button role="tab" class="day" [class.on]="d === currentDay()" [attr.aria-selected]="d === currentDay()" (click)="day.set(d)">
+        {{ d }}
+        <span class="gapcount" [class.zero]="!dayGaps()[d]">{{ dayGaps()[d] ? dayGaps()[d] + ' à pourvoir' : 'complet' }}</span>
+      </button>
+    }
+  </div>
+  <div class="filters">
+    <select [value]="show()" (change)="show.set($any($event.target).value)" aria-label="Type de créneau">
+      <option value="tout">Sessions et postes</option>
+      <option value="sessions">Sessions seulement</option>
+      <option value="postes">Accueil et bagages</option>
+    </select>
+    <label class="check"><input type="checkbox" [checked]="onlyGaps()" (change)="onlyGaps.set($any($event.target).checked)" /> Seulement ce qui manque</label>
+  </div>
+</div>
+
+<div class="split" [class.withpanel]="selected()">
+  <ol class="timeline">
+    @for (g of groups(); track g.debut) {
+      <li class="hour">
+        <time class="at">{{ time(g.debut) || '—' }}</time>
+        <div class="rows">
+          @for (x of g.slots; track x.id) {
+            <div class="slot" [class]="'slot ' + cov(x)" [class.sel]="x.id === selectedId()">
+              <button class="slothead" (click)="open(x)" [attr.aria-expanded]="x.id === selectedId()">
+                <span class="where">{{ poste(x) ? fmt(x) : x.salle }}</span>
+                <span class="what">{{ poste(x) ? 'jusqu’à ' + end(x) : fmt(x) + ' · ' + end(x) }}</span>
+                <span class="count"><b>{{ assigned(x).length }}</b>/{{ need(x) }}</span>
+              </button>
+              @if (assigned(x).length) {
+                <ul class="chips">
+                  @for (p of assigned(x); track p.id) {
+                    <li><button class="chip" (click)="store.unassign(x.id, p.id)" [title]="'Retirer ' + p.nom + ' de ce créneau'">{{ p.nom }} <span aria-hidden="true">×</span></button></li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </div>
+      </li>
+    } @empty {
+      <li class="empty">
+        @if (onlyGaps()) { Rien ne manque sur cette journée. } @else { Aucun créneau sur cette journée. }
+      </li>
+    }
+  </ol>
+
+  @if (selected(); as x) {
+    <aside class="panel" aria-label="Affecter des helpers">
+      <header>
+        <div>
+          <h2>{{ label(x) }}</h2>
+          <p class="sub">{{ x.jour }}, {{ time(x.debut) }}–{{ end(x) }}</p>
+        </div>
+        <button class="ghost" (click)="selectedId.set(null)" aria-label="Fermer le panneau">×</button>
+      </header>
+
+      <label class="needline">
+        Helpers nécessaires
+        <input type="number" min="0" [value]="x.besoin ?? ''" [placeholder]="need(x)" (change)="setNeed(x, $any($event.target).value)" />
+        <span class="hint">vide = règle du format ({{ fmt(x) }})</span>
+      </label>
+
+      @if (assigned(x).length) {
+        <h3>Placés</h3>
+        <ul class="plist">
+          @for (p of assigned(x); track p.id) {
+            <li><span class="av">{{ initials(p.nom) }}</span><span class="nm">{{ p.nom }}</span>
+              <button class="ghost small" (click)="store.unassign(x.id, p.id)">Retirer</button></li>
+          }
+        </ul>
+      }
+
+      <h3>Disponibles <span class="n">{{ eligible().length }}</span></h3>
+      @if (!store.people().length) {
+        <p class="note">Importe d’abord ta liste de helpers depuis l’onglet Helpers.</p>
+      }
+      <ul class="plist">
+        @for (c of eligible(); track c.person.id) {
+          <li>
+            <span class="av">{{ initials(c.person.nom) }}</span>
+            <span class="nm">{{ c.person.nom }} @if (c.match) { <em class="match">{{ c.match === 2 ? 'compétence' : 'salle' }}</em> }</span>
+            <span class="ld">{{ c.load }} créneau{{ c.load > 1 ? 'x' : '' }}</span>
+            <button class="primary small" (click)="store.assign(x.id, c.person.id)">Placer</button>
+          </li>
+        }
+      </ul>
+
+      @if (blocked().length) {
+        <button class="link" (click)="showBlocked.set(!showBlocked())">
+          {{ showBlocked() ? 'Masquer' : 'Voir' }} les {{ blocked().length }} indisponibles
+        </button>
+        @if (showBlocked()) {
+          <ul class="plist muted">
+            @for (c of blocked(); track c.person.id) {
+              <li><span class="av">{{ initials(c.person.nom) }}</span><span class="nm">{{ c.person.nom }}</span><span class="why">{{ c.reason }}</span></li>
+            }
+          </ul>
+        }
+      }
+    </aside>
+  }
+</div>

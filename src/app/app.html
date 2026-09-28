@@ -1,0 +1,49 @@
+<header class="top">
+  <div class="brand">
+    <h1>Régie des helpers</h1>
+    <span class="event">{{ store.state().nom }}</span>
+  </div>
+
+  <div class="gauge" [class.done]="!toFill()" aria-live="polite">
+    <strong>{{ toFill() }}</strong>
+    <span>{{ toFill() ? 'places à pourvoir' : 'tout est couvert' }}<br /><small>{{ store.coverage().have }} sur {{ store.coverage().need }} · {{ store.people().length }} helpers</small></span>
+  </div>
+
+  <div class="actions">
+    <button class="primary" (click)="auto('fill')">Compléter automatiquement</button>
+    <button class="ghost" (click)="auto('all')">Tout refaire</button>
+    <details class="menu">
+      <summary class="ghost">Fichier</summary>
+      <div class="menubody">
+        <button (click)="save()">Sauvegarder la régie (JSON)</button>
+        <label class="asbutton">Ouvrir une sauvegarde<input type="file" accept=".json,application/json" (change)="open($event)" /></label>
+        <button (click)="exportCsv()">Exporter les affectations (CSV)</button>
+        <hr />
+        <button (click)="exporterPdf('planning')">Télécharger le planning (PDF)</button>
+        <button (click)="exporterPdf('feuilles')">Télécharger les feuilles de route (PDF)</button>
+        <hr />
+        <button class="danger" (click)="reset()">Repartir de zéro</button>
+      </div>
+    </details>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Sections">
+  @for (t of tabs; track t.key) {
+    <button [class.on]="tab() === t.key" [attr.aria-current]="tab() === t.key ? 'page' : null" (click)="tab.set(t.key)">
+      {{ t.label }}
+      @if (t.key === 'controles' && issues()) { <span class="badge">{{ issues() }}</span> }
+    </button>
+  }
+</nav>
+
+@if (message()) { <p class="toast" role="status">{{ message() }}</p> }
+
+<main>
+  @switch (tab()) {
+    @case ('planning') { <app-planning /> }
+    @case ('helpers') { <app-helpers /> }
+    @case ('regles') { <app-regles /> }
+    @case ('controles') { <app-controles /> }
+  }
+</main>

@@ -1,0 +1,30 @@
+.intake { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.card h2, .listhead h2 { font: 600 1.35rem/1.1 var(--display); margin: 0; }
+.card label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; font-weight: 500; }
+.card button[type=submit] { align-self: flex-start; }
+.line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.filebtn { position: relative; overflow: hidden; }
+.filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.filebtn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+pre { background: var(--paper); padding: 10px; border-radius: 4px; font-size: .78rem; overflow: auto; }
+.note, .hint { color: var(--muted); font-size: .82rem; font-weight: 400; margin: 0; }
+.err { color: var(--miss); margin: 0; }
+.ok { color: var(--ok); margin: 0; }
+.listhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.listhead input { min-width: 260px; }
+.empty { color: var(--muted); padding: 30px 0; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: var(--surface); font-size: .9rem; }
+th { text-align: left; font-weight: 600; font-size: .78rem; color: var(--muted); padding: 8px 10px; border-bottom: 2px solid var(--line); }
+td { padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.num { text-align: right; white-space: nowrap; }
+td.num input { width: 64px; text-align: right; }
+tr.over td { background: color-mix(in srgb, var(--miss) 8%, transparent); }
+.name { display: inline-flex; gap: 8px; align-items: center; font-weight: 600; color: var(--ink); }
+.av { width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: .62rem; display: grid; place-items: center; }
+.bar { display: inline-block; width: 60px; height: 6px; background: var(--line); border-radius: 3px; margin-right: 8px; vertical-align: middle; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--ink); }
+.detail td { background: var(--paper); }
+.road { margin: 4px 0; padding-left: 20px; display: grid; gap: 4px; }
+.road time { font-variant-numeric: tabular-nums; font-weight: 600; margin-right: 6px; }

@@ -1,0 +1,54 @@
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; margin-bottom: 20px; }
+.days { display: flex; gap: 4px; border-bottom: 2px solid var(--line); }
+.day { background: none; border: 0; padding: 10px 16px 8px; font: 600 1.15rem/1 var(--display); color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -2px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.day.on { color: var(--ink); border-bottom-color: var(--ink); }
+.gapcount { font: 500 .75rem var(--body); color: var(--miss); }
+.gapcount.zero { color: var(--ok); }
+.filters { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+
+.split { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; }
+.split.withpanel { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); }
+
+.timeline { list-style: none; margin: 0; padding: 0; }
+.hour { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.at { font: 600 1.35rem/1.1 var(--display); color: var(--ink); font-variant-numeric: tabular-nums; padding-top: 6px; }
+.rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+
+.slot { background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--miss); border-radius: 4px; }
+.slot.part { border-left-color: var(--part); }
+.slot.ok { border-left-color: var(--ok); }
+.slot.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+.slothead { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 1fr auto; grid-template-areas: "where count" "what count"; width: 100%; padding: 8px 10px; gap: 1px 8px; }
+.slothead:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.where { grid-area: where; font-weight: 600; }
+.what { grid-area: what; font-size: .8rem; color: var(--muted); }
+.count { grid-area: count; align-self: center; font: 500 1.05rem var(--display); color: var(--muted); font-variant-numeric: tabular-nums; }
+.count b { font-size: 1.35rem; color: var(--ink); }
+.chips { list-style: none; margin: 0; padding: 0 8px 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 2px 8px; font-size: .78rem; cursor: pointer; }
+.chip:hover { border-color: var(--miss); color: var(--miss); }
+.empty { padding: 40px 0; color: var(--muted); }
+
+.panel { position: sticky; top: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; max-height: calc(100vh - 32px); overflow: auto; }
+.panel header { display: flex; justify-content: space-between; gap: 8px; }
+.panel h2 { font: 600 1.4rem/1.1 var(--display); margin: 0; }
+.panel h3 { font: 600 1rem var(--display); margin: 18px 0 6px; display: flex; gap: 6px; align-items: baseline; }
+.n { font: 500 .8rem var(--body); color: var(--muted); }
+.sub { margin: 4px 0 0; color: var(--muted); font-size: .85rem; }
+.needline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 14px; font-size: .9rem; }
+.needline input { width: 64px; }
+.hint, .note { color: var(--muted); font-size: .8rem; }
+.plist { list-style: none; margin: 0; padding: 0; }
+.plist li { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.plist.muted li { grid-template-columns: 28px 1fr auto; opacity: .75; }
+.av { width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: .65rem; font-weight: 600; display: grid; place-items: center; }
+.nm { font-size: .9rem; }
+.match { font-style: normal; font-size: .7rem; color: var(--ok); margin-left: 4px; }
+.ld, .why { font-size: .75rem; color: var(--muted); }
+.why { color: var(--miss); }
+
+@media (max-width: 900px) {
+  .split.withpanel { grid-template-columns: 1fr; }
+  .panel { position: static; max-height: none; }
+  .hour { grid-template-columns: 1fr; }
+}

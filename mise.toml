@@ -1,0 +1,36 @@
+# Environnement de travail de la régie des helpers.
+# Premier lancement :  mise trust && mise install && mise run dev
+
+[tools]
+node = "22"
+
+[env]
+# Évite la question interactive de l'Angular CLI sur la télémétrie.
+NG_CLI_ANALYTICS = "false"
+# Rend les binaires locaux (ng…) accessibles directement.
+_.path = ["{{config_root}}/node_modules/.bin"]
+
+[tasks.setup]
+description = "Installer les dépendances npm"
+run = "npm ci"
+sources = ["package.json", "package-lock.json"]
+outputs = ["node_modules/.package-lock.json"]
+
+[tasks.dev]
+description = "Lancer l'application sur http://localhost:4200"
+depends = ["setup"]
+run = "ng serve --open"
+
+[tasks.build]
+description = "Construire la version de production dans dist/"
+depends = ["setup"]
+run = "ng build"
+
+[tasks.preview]
+description = "Servir le build de production sur http://localhost:4300"
+depends = ["build"]
+run = "npx --yes http-server dist/regie-helpers/browser -p 4300 -c-1"
+
+[tasks.clean]
+description = "Supprimer les dépendances et les artefacts de build"
+run = "rm -rf node_modules dist .angular"

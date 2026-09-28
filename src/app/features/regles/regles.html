@@ -1,0 +1,55 @@
+<div class="cols">
+  <section>
+    <h2>Helpers par type de créneau</h2>
+    <p class="note">Un besoin saisi sur un créneau précis, dans le planning, prend le pas sur cette valeur.</p>
+    <table>
+      <tbody>
+        @for (f of store.state().formats; track f.key) {
+          <tr><th scope="row">{{ f.label }}</th>
+            <td><input type="number" min="0" [value]="f.need" (change)="setNeed(f.key, $any($event.target).value)" [attr.aria-label]="'Helpers pour ' + f.label" /></td></tr>
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Limites par personne</h2>
+    <label class="opt">
+      <span>Pause minimum entre deux créneaux</span>
+      <span class="field"><input type="number" min="0" step="5" [value]="store.state().options.minGap" (change)="setOpt('minGap', $any($event.target).value)" /> min</span>
+      <small>0 = on peut enchaîner deux créneaux collés.</small>
+    </label>
+    <label class="opt">
+      <span>Créneaux maximum sur l’événement</span>
+      <span class="field"><input type="number" min="0" [value]="store.state().options.maxPerPerson" (change)="setOpt('maxPerPerson', $any($event.target).value)" /></span>
+      <small>0 = sans limite. Le plafond propre à un helper l’emporte.</small>
+    </label>
+    <label class="opt">
+      <span>Créneaux maximum par jour</span>
+      <span class="field"><input type="number" min="0" [value]="store.state().options.maxPerDay" (change)="setOpt('maxPerDay', $any($event.target).value)" /></span>
+      <small>0 = sans limite.</small>
+    </label>
+
+    <h2 class="mt">Journées</h2>
+    <ul class="days">
+      @for (d of store.days(); track d) {
+        <li><input [value]="d" (change)="store.renameDay(d, $any($event.target).value)" [attr.aria-label]="'Renommer ' + d" /></li>
+      }
+    </ul>
+    <form class="line" (submit)="$event.preventDefault(); addDay(nd)">
+      <input #nd placeholder="Nouvelle journée" aria-label="Nom de la nouvelle journée" />
+      <button class="ghost" type="submit">Ajouter avec le programme type</button>
+    </form>
+  </section>
+</div>
+
+<section class="how">
+  <h2>Comment le remplissage automatique décide</h2>
+  <ol>
+    <li><b>Qui peut aller sur un créneau.</b> La personne est présente ce jour-là (sans jours renseignés, elle l’est tous les jours), elle n’a atteint ni son plafond ni le plafond du jour, et le créneau ne chevauche aucun des siens, pause minimum comprise.</li>
+    <li><b>Par quel créneau on commence.</b> Celui qui a le moins de candidats possibles. À égalité : le plus long, puis celui où il manque le plus de monde, puis l’ordre de la journée.</li>
+    <li><b>Qui on choisit.</b> Le score le plus bas, avec <code>charge × 10 + charge du jour × 4 − compétence × 3</code>. La compétence vaut 2 si un tag de la personne désigne le format (« accueil »), 1 s’il désigne la salle.</li>
+  </ol>
+  <p class="note">Conséquence : l’équité passe avant les compétences. Un créneau d’écart de charge (10 points) pèse plus lourd que la meilleure compétence (6 points).</p>
+  <p class="note">L’accueil et les bagages couvrent {{ poste.ouverture }}–{{ poste.fermeture }}, découpés sur les débuts de session, sans vacation de moins de {{ poste.tranche }} min.</p>
+</section>
