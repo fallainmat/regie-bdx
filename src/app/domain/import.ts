@@ -74,6 +74,6 @@ export function parseState(data: unknown): RegieState {
     people: s.people,
     slots: s.slots,
     assign: s.assign ?? {},
-    captation: s.captation ?? {},
+    roles: s.roles ?? {},
   };
 }

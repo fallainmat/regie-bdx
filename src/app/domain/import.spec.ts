@@ -1,14 +1,14 @@
 import { parseState } from './import';
 import { blankState } from './seed';
 
-describe('parseState — champ captation', () => {
+describe('parseState — champ roles', () => {
   it('accepte une sauvegarde antérieure, sans le champ', () => {
-    const { captation, ...ancien } = blankState();
-    expect(parseState(ancien).captation).toEqual({});
+    const { roles, ...ancien } = blankState();
+    expect(parseState(ancien).roles).toEqual({});
   });
 
   it('préserve les désignations existantes', () => {
-    const sauvegarde = { ...blankState(), captation: { 's-1': 'p-1' } };
-    expect(parseState(sauvegarde).captation).toEqual({ 's-1': 'p-1' });
+    const sauvegarde = { ...blankState(), roles: { 's-1': { captation: 'p-1' } } };
+    expect(parseState(sauvegarde).roles).toEqual({ 's-1': { captation: 'p-1' } });
   });
 });

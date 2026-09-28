@@ -1,5 +1,5 @@
 import { Injectable, computed, effect, signal } from '@angular/core';
-import { Format, Options, Person, RegieState, Slot } from '../domain/model';
+import { Format, Options, Person, RegieState, RoleKey, SlotRoles, Slot } from '../domain/model';
 import { blankState, seedDay } from '../domain/seed';
 import { autoAssign, coverage, diagnostics, formatLabel, personSlots, slotLabel } from '../domain/rules';
 import { parsePeople, parseState } from '../domain/import';
@@ -100,14 +100,13 @@ export class RegieStore {
   }
 
   /* --- rôles ---------------------------------------------------------- */
-  /** Désigne la captation d'un créneau ; `null` retire la désignation. */
-  setCaptation(slotId: string, personId: string | null) {
+  /** Attribue un poste d'un créneau ; `null` le libère. */
+  setRole(slotId: string, role: RoleKey, personId: string | null) {
     this.patch((s) => {
-      const captation = { ...s.captation };
-      if (personId == null) delete captation[slotId];
-      else if ((s.assign[slotId] ?? []).includes(personId)) captation[slotId] = personId;
-      else return {};
-      return { captation };
+      if (personId != null && !(s.assign[slotId] ?? []).includes(personId)) return {};
+      const next: SlotRoles = { ...(s.roles[slotId] ?? {}) };
+      if (personId == null) delete next[role]; else next[role] = personId;
+      return { roles: { ...s.roles, [slotId]: next } };
     });
   }
 

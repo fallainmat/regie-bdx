@@ -3,7 +3,7 @@
  * Tout est pur : chaque fonction lit un état et n'en modifie aucun,
  * sauf `autoAssign` qui renvoie une nouvelle table d'affectations.
  */
-import { Person, RegieState, Slot } from './model';
+import { Person, RegieState, RoleKey, ROLE_KEYS, Slot } from './model';
 import { FORMATION_KEY, isPosteKey } from './seed';
 import { normKey } from './util';
 
@@ -189,12 +189,12 @@ export interface Diagnostics {
   over: { person: Person; n: number; max: number }[];
   /** Captation désignée mais qui n'a pas suivi la formation. */
   untrained: { slot: Slot; person: Person }[];
-  /** Créneau de salle complet dont la captation n'est pas désignée. */
-  unassignedRole: Slot[];
+  /** Poste vacant sur un créneau de salle. */
+  missingRole: { slot: Slot; role: RoleKey }[];
 }
 
 export function diagnostics(state: RegieState): Diagnostics {
-  const d: Diagnostics = { under: [], conflicts: [], idle: [], over: [], untrained: [], unassignedRole: [] };
+  const d: Diagnostics = { under: [], conflicts: [], idle: [], over: [], untrained: [], missingRole: [] };
   // Avoir suivi la formation ne dépend pas du jour du créneau évalué :
   // le rapprochement se fait sur la personne.
   const formes = new Set(
@@ -204,14 +204,13 @@ export function diagnostics(state: RegieState): Diagnostics {
     const miss = slotNeed(state, s) - slotAssigned(state, s).length;
     if (miss > 0) d.under.push({ slot: s, miss });
     if (!isSalleConference(s)) continue;
-    const id = captationOf(state, s);
-    // Un id qui ne correspond à aucun helper connu vaut absence de désignation :
-    // sans cela le créneau échapperait silencieusement aux deux diagnostics.
-    const person = id ? state.people.find((p) => p.id === id) : undefined;
-    if (!person) {
-      if (slotCoverage(state, s) === 'ok') d.unassignedRole.push(s);
-    } else if (!formes.has(person.id)) {
-      d.untrained.push({ slot: s, person });
+    for (const role of ROLE_KEYS) {
+      const id = roleOf(state, s, role);
+      // Un id qui ne correspond à aucun helper connu vaut poste vacant : sans
+      // cela le créneau échapperait silencieusement aux deux diagnostics.
+      const person = id ? state.people.find((p) => p.id === id) : undefined;
+      if (!person) { d.missingRole.push({ slot: s, role }); continue; }
+      if (role === 'captation' && !formes.has(person.id)) d.untrained.push({ slot: s, person });
     }
   }
   for (const p of state.people) {
@@ -244,16 +243,12 @@ export function isSalleConference(s: Slot): boolean {
 }
 
 /**
- * La captation d'un créneau, si elle y est toujours affectée.
- * `autoAssign` remplace la table d'affectations en bloc sans toucher aux rôles,
- * et n'en repose aucun : cette validation à la lecture est le seul rempart
- * contre les désignations devenues caduques. Aucun appelant ne doit lire
- * `state.captation` directement.
+ * Le titulaire d'un poste, s'il est toujours affecté au créneau.
+ * `autoAssign` réécrit `assign` et `roles` ensemble : cette validation à la
+ * lecture est ce qui rend inerte toute désignation devenue caduque. Aucun
+ * appelant ne lit `state.roles` directement.
  */
-export function captationOf(state: RegieState, s: Slot): string | null {
-  const captator = state.captation[s.id];
-  if (!captator) return null;
-  const assigned = slotAssigned(state, s);
-  if (assigned.includes(captator)) return captator;
-  return null;
+export function roleOf(state: RegieState, s: Slot, role: RoleKey): string | null {
+  const id = state.roles[s.id]?.[role];
+  return id && slotAssigned(state, s).includes(id) ? id : null;
 }

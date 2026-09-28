@@ -42,6 +42,15 @@ export interface Options {
   maxPerDay: number;
 }
 
+export type RoleKey = 'keeper' | 'captation';
+export const ROLE_KEYS: RoleKey[] = ['keeper', 'captation'];
+
+/** Les deux postes d'un créneau de salle ; absents tant qu'ils ne sont pas pourvus. */
+export interface SlotRoles {
+  keeper?: string;
+  captation?: string;
+}
+
 export interface RegieState {
   version: 1;
   nom: string;
@@ -52,8 +61,8 @@ export interface RegieState {
   slots: Slot[];
   /** slotId -> liste d'ids de personnes. */
   assign: Record<string, string[]>;
-  /** slotId -> id de la personne qui assure la captation ; le keeper est l'autre. */
-  captation: Record<string, string>;
+  /** slotId -> les deux postes d'un créneau de salle. */
+  roles: Record<string, SlotRoles>;
 }
 
 /** Les postes transverses, découpés en vacations sur la journée. */
