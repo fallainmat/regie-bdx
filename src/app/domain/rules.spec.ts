@@ -27,8 +27,9 @@ describe('tientUnBinome', () => {
     expect(tientUnBinome(slot('d', { salle: 'Lab 2' }))).toBe(false);
   });
 
-  // Sans ces négatifs à salle non vide, le prédicat pourrait être réécrit en
-  // `salle !== ''` — ou perdre son ancre ^ — sans qu'aucun test ne bronche.
+  // Sans ces négatifs à salle non vide, le prédicat pourrait être élargi à
+  // `salle !== ''` sans qu'aucun test ne bronche : les créneaux sans salle
+  // resteraient écartés, et tous les autres deviendraient des binômes.
   it('écarte toute autre salle', () => {
     expect(tientUnBinome(slot('g', { salle: 'Collaboratif' }))).toBe(false);
     expect(tientUnBinome(slot('h', { salle: 'Salle 1' }))).toBe(false);
