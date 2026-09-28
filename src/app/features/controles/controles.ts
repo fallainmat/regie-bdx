@@ -38,6 +38,20 @@ import { minutesToTime } from '../../domain/util';
           @for (p of d.idle; track p.id) { <li>{{ p.nom }}</li> } @empty { <li class="none">Aucun.</li> }
         </ul>
       </section>
+      <section>
+        <h2>Captation non formée <span class="n">{{ d.untrained.length }}</span></h2>
+        <ul>
+          @for (u of d.untrained; track u.slot.id) {
+            <li><span>{{ when(u.slot) }} · {{ label(u.slot) }}</span><b class="miss">{{ u.person.nom }}</b></li>
+          } @empty { <li class="none">Aucune.</li> }
+        </ul>
+        <h2 class="mt">Captation à désigner <span class="n">{{ d.unassignedRole.length }}</span></h2>
+        <ul>
+          @for (s of d.unassignedRole; track s.id) {
+            <li><span>{{ when(s) }} · {{ label(s) }}</span></li>
+          } @empty { <li class="none">Aucun.</li> }
+        </ul>
+      </section>
     </div>
   `,
   styles: `
@@ -56,7 +70,8 @@ export class Controles {
   protected readonly store = inject(RegieStore);
   protected readonly allGood = computed(() => {
     const d = this.store.diagnostics();
-    return this.store.people().length > 0 && !d.under.length && !d.conflicts.length && !d.over.length;
+    return this.store.people().length > 0 && !d.under.length && !d.conflicts.length && !d.over.length
+      && !d.untrained.length && !d.unassignedRole.length;
   });
   protected when(s: Slot) { return `${s.jour} ${minutesToTime(s.debut)}–${minutesToTime(slotEnd(s))}`; }
   protected label(s: Slot) { return slotLabel(this.store.state(), s); }

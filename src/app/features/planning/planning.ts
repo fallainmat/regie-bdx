@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RegieStore } from '../../state/regie.store';
 import { Person, Slot } from '../../domain/model';
 import {
-  compareSlots, eligibility, formatLabel, isPoste, personSlots, slotAssigned,
+  captationOf, compareSlots, eligibility, formatLabel, isPoste, isSalleConference, personSlots, slotAssigned,
   slotCoverage, slotEnd, slotLabel, slotNeed, tagBonus,
 } from '../../domain/rules';
 import { initials, minutesToTime } from '../../domain/util';
@@ -80,6 +80,12 @@ export class Planning {
   protected fmt(x: Slot) { return formatLabel(this.store.state(), x.format); }
   protected end(x: Slot) { return minutesToTime(slotEnd(x)); }
   protected poste(x: Slot) { return isPoste(x); }
+
+  protected roleAttendu(x: Slot) { return isSalleConference(x); }
+  protected captation(x: Slot) { return captationOf(this.store.state(), x); }
+  protected toggleCaptation(x: Slot, personId: string) {
+    this.store.setCaptation(x.id, this.captation(x) === personId ? null : personId);
+  }
 
   protected open(x: Slot) {
     this.selectedId.set(this.selectedId() === x.id ? null : x.id);

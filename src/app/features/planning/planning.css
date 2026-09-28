@@ -52,3 +52,4 @@
   .panel { position: static; max-height: none; }
   .hour { grid-template-columns: 1fr; }
 }
+.plist button.on { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); border-color: var(--ok); font-weight: 600; }

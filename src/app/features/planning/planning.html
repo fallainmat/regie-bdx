@@ -69,6 +69,11 @@
         <ul class="plist">
           @for (p of assigned(x); track p.id) {
             <li><span class="av">{{ initials(p.nom) }}</span><span class="nm">{{ p.nom }}</span>
+              @if (roleAttendu(x)) {
+                <button class="ghost small" [class.on]="captation(x) === p.id"
+                  [attr.aria-pressed]="captation(x) === p.id"
+                  (click)="toggleCaptation(x, p.id)">Captation</button>
+              }
               <button class="ghost small" (click)="store.unassign(x.id, p.id)">Retirer</button></li>
           }
         </ul>

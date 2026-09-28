@@ -99,6 +99,18 @@ export class RegieStore {
     this.patch((s) => ({ slots: s.slots.map((x: Slot) => (x.id === slotId ? { ...x, besoin } : x)) }));
   }
 
+  /* --- rôles ---------------------------------------------------------- */
+  /** Désigne la captation d'un créneau ; `null` retire la désignation. */
+  setCaptation(slotId: string, personId: string | null) {
+    this.patch((s) => {
+      const captation = { ...s.captation };
+      if (personId == null) delete captation[slotId];
+      else if ((s.assign[slotId] ?? []).includes(personId)) captation[slotId] = personId;
+      else return {};
+      return { captation };
+    });
+  }
+
   /* --- journées ------------------------------------------------------- */
   renameDay(oldName: string, name: string) {
     name = name.trim();
