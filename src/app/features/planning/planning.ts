@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RegieStore } from '../../state/regie.store';
 import { Person, RoleKey, ROLE_ABBR, ROLE_KEYS, ROLE_LABEL, Slot } from '../../domain/model';
 import {
-  compareSlots, eligibility, formatLabel, isPoste, isSalleConference, personSlots, roleDe, roleOf, slotAssigned,
+  compareSlots, eligibility, formatLabel, isPoste, tientUnBinome, personSlots, roleDe, roleOf, slotAssigned,
   slotCoverage, slotEnd, slotLabel, slotNeed, tagBonus,
 } from '../../domain/rules';
 import { initials, minutesToTime } from '../../domain/util';
@@ -67,7 +67,7 @@ export class Planning {
         const brut = eligibility(s, p, slot);
         // Sur un créneau à postes, être déjà placé n'exclut pas : on peut tenir
         // l'autre poste, encore vacant.
-        const reason = isSalleConference(slot) && brut === 'déjà placé' ? null : brut;
+        const reason = tientUnBinome(slot) && brut === 'déjà placé' ? null : brut;
         return { person: p, load: personSlots(s, p.id).length, reason, match: tagBonus(s, p, slot) };
       })
       .filter((c) => c.reason !== 'déjà placé')
@@ -88,7 +88,7 @@ export class Planning {
   protected poste(x: Slot) { return isPoste(x); }
 
   protected readonly ORDRE = ROLE_KEYS;
-  protected roleAttendu(x: Slot) { return isSalleConference(x); }
+  protected roleAttendu(x: Slot) { return tientUnBinome(x); }
   protected roleLabel(r: RoleKey) { return ROLE_LABEL[r]; }
   protected roleAbbr(r: RoleKey) { return ROLE_ABBR[r]; }
   protected roleDe(x: Slot, personId: string) { return roleDe(this.store.state(), x, personId); }

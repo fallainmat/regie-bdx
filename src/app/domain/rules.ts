@@ -28,7 +28,7 @@ export function slotCoverage(state: RegieState, s: Slot): Coverage {
   // Un créneau de salle n'est complet que si ses deux postes sont tenus : deux
   // personnes sans rôle attribué ne suffisent plus. Les créneaux sans salle
   // gardent la règle d'effectif, sous peine d'être incomplétables.
-  if (isSalleConference(s) && ROLE_KEYS.some((r) => !roleOf(state, s, r))) return a > 0 ? 'part' : 'miss';
+  if (tientUnBinome(s) && ROLE_KEYS.some((r) => !roleOf(state, s, r))) return a > 0 ? 'part' : 'miss';
   if (a >= n) return 'ok';
   return a > 0 ? 'part' : 'miss';
 }
@@ -89,7 +89,7 @@ export function overlaps(a: Slot, b: Slot, gap: number): boolean {
 
 /** null si la personne peut être placée sur le créneau, sinon la raison du refus. */
 export function eligibility(state: RegieState, p: Person, slot: Slot, role?: RoleKey): string | null {
-  if (role && isSalleConference(slot)) {
+  if (role && tientUnBinome(slot)) {
     const tenant = roleOf(state, slot, role);
     if (tenant && tenant !== p.id) return 'poste déjà tenu';
   }
@@ -173,7 +173,7 @@ export function autoAssign(state: RegieState, mode: 'fill' | 'all'): AutoResult 
   // Un créneau de salle déjà pourvu en personnes mais sans rôles doit être
   // visité : sans cela ses postes ne seraient jamais attribués.
   const aRemplir = (s: Slot) =>
-    count(s) < need(s) || (isSalleConference(s) && ROLE_KEYS.some((r) => !roleTaken(s, r)));
+    count(s) < need(s) || (tientUnBinome(s) && ROLE_KEYS.some((r) => !roleTaken(s, r)));
 
   const pending = state.slots
     .filter(aRemplir)
@@ -188,7 +188,7 @@ export function autoAssign(state: RegieState, mode: 'fill' | 'all'): AutoResult 
 
   let placed = 0;
   for (const { s } of pending) {
-    if (isSalleConference(s)) {
+    if (tientUnBinome(s)) {
       // La captation d'abord : c'est le poste contraint, il veut quelqu'un qui a
       // suivi la formation. Servir le keeper en premier lui ferait rafler la
       // seule personne formée et laisserait la captation à quelqu'un qui ne l'est pas.
@@ -268,7 +268,7 @@ export function diagnostics(state: RegieState): Diagnostics {
   for (const s of [...state.slots].sort(compareSlots(state.days))) {
     const miss = slotNeed(state, s) - slotAssigned(state, s).length;
     if (miss > 0) d.under.push({ slot: s, miss });
-    if (!isSalleConference(s)) continue;
+    if (!tientUnBinome(s)) continue;
     for (const role of ROLE_KEYS) {
       const id = roleOf(state, s, role);
       // Un id qui ne correspond à aucun helper connu vaut poste vacant : sans
@@ -307,9 +307,13 @@ export function roleDe(state: RegieState, s: Slot, personId: string): RoleKey | 
   return ROLE_KEYS.find((r) => roleOf(state, s, r) === personId) ?? null;
 }
 
-/** Les créneaux tenus en binôme keeper + captation : amphis et labs. */
-export function isSalleConference(s: Slot): boolean {
-  return /amphi|^lab/i.test(s.salle);
+/**
+ * Les créneaux tenus en binôme keeper + captation : les amphis seulement.
+ * Les labs accueillent ateliers et universités, qui ne tiennent qu'une personne
+ * et n'ont ni time keeper ni captation.
+ */
+export function tientUnBinome(s: Slot): boolean {
+  return /amphi/i.test(s.salle);
 }
 
 /**

@@ -1,6 +1,6 @@
 import { Slot } from './model';
 import { POSTE_OUVERTURE, blankState, seedDay } from './seed';
-import { isSalleConference } from './rules';
+import { tientUnBinome } from './rules';
 import { parseTime } from './util';
 
 const FORMATION = 'formation';
@@ -66,14 +66,19 @@ describe('seedDay — formation captation', () => {
 });
 
 describe('DEFAULT_FORMATS — binôme keeper + captation', () => {
-  it('demande deux personnes sur tous les formats de salle', () => {
+  it('demande deux personnes sur les formats tenus en binôme', () => {
     const need = Object.fromEntries(blankState().formats.map((f) => [f.key, f.need]));
     expect(need['conference']).toBe(2);
     expect(need['keynote']).toBe(2);
     expect(need['quickie']).toBe(2);
-    expect(need['atelier']).toBe(2);
-    expect(need['universite']).toBe(2);
     expect(need['tia']).toBe(2);
+  });
+
+  // Les labs accueillent ateliers et universités : une personne, sans postes.
+  it('n\'en demande qu\'une sur les formats de lab', () => {
+    const need = Object.fromEntries(blankState().formats.map((f) => [f.key, f.need]));
+    expect(need['atelier']).toBe(1);
+    expect(need['universite']).toBe(1);
   });
 });
 
@@ -82,11 +87,11 @@ describe('DEFAULT_FORMATS — binôme keeper + captation', () => {
 // les relie — ce test est ce lien.
 describe('PROGRAMME — accord entre besoin du binôme et périmètre des salles', () => {
   it('place tout format tenu en binôme dans une salle reconnue', () => {
-    const binome = ['keynote', 'conference', 'quickie', 'atelier', 'universite', 'tia'];
+    const binome = ['keynote', 'conference', 'quickie', 'tia'];
     const tenus = blankState().slots.filter((s) => binome.includes(s.format));
     // Sans ce garde, l'assertion suivante passerait sur un ensemble vide.
     expect(tenus.length).toBeGreaterThan(0);
-    const fautifs = tenus.filter((s) => !isSalleConference(s)).map((s) => `${s.format} en « ${s.salle} »`);
+    const fautifs = tenus.filter((s) => !tientUnBinome(s)).map((s) => `${s.format} en « ${s.salle} »`);
     expect(fautifs).toEqual([]);
   });
 });

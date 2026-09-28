@@ -22,7 +22,7 @@ Cela revient sur deux décisions antérieures, assumées :
 
 Rien n'est à jeter :
 
-- `isSalleConference` et son périmètre `/amphi|^lab/i`, avec ses tests épinglés ;
+- le prédicat de périmètre et ses tests épinglés (voir l'amendement ci-dessous) ;
 - le créneau de formation du jeudi, `FORMATION_KEY` et la notion « a suivi la
   formation », indépendante du jour ;
 - les besoins des ateliers et universités portés à 2 ;
@@ -149,3 +149,23 @@ d'un créneau de salle exige les deux rôles **en plus** de l'effectif demandé.
 - Aucun marqueur dans la grille Planning.
 - Ni l'impression ni l'export CSV ne mentionnent le rôle.
 - Aucun troisième rôle, aucun rôle sur les postes transverses.
+
+---
+
+## Amendement du 2026-09-28 — les labs sortent du périmètre
+
+Constat d'usage : **les labs n'ont ni time keeper ni captation, et ne tiennent
+qu'une personne**. Ce document et celui qu'il remplace les incluaient tous deux,
+sur la foi d'une réponse qui valait pour les conférences.
+
+Deux corrections, et rien d'autre :
+
+- le prédicat de périmètre passe de `/amphi|^lab/i` à `/amphi/i`. Il est renommé
+  `tientUnBinome` : il ne retient plus « les salles de conférence » — les labs en
+  sont — mais les créneaux tenus par un binôme. Nommer le concept plutôt que le
+  type de salle évite qu'un futur lecteur se fie au nom contre le code.
+- `atelier` et `universite` reviennent à `need: 1`.
+
+Conséquence sur les données existantes : les rôles déjà posés sur des créneaux de
+lab deviennent inertes, sans rien effacer — la validation à la lecture s'en
+charge, comme pour toute désignation hors périmètre.

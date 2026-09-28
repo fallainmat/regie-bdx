@@ -24,7 +24,8 @@ s.roles = s.roles || {};
 const formes = new Set(s.slots.filter((x) => x.format === 'formation').flatMap((x) => s.assign[x.id] || []));
 let deduits = 0, ambigus = 0;
 for (const x of s.slots) {
-  if (!/amphi|^lab/i.test(x.salle || '')) continue;
+  // Amphis seulement : les labs ne tiennent pas de binôme.
+  if (!/amphi/i.test(x.salle || '')) continue;
   const ids = s.assign[x.id] || [];
   if (ids.length < 2 || (s.roles[x.id] && s.roles[x.id].captation)) continue;
   const formesIci = ids.filter((i) => formes.has(i));

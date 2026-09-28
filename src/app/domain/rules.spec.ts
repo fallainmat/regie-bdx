@@ -1,6 +1,6 @@
 import { Person, RegieState, Slot } from './model';
 import { blankState } from './seed';
-import { autoAssign, diagnostics, eligibility, isSalleConference, roleDe, roleOf, slotCoverage } from './rules';
+import { autoAssign, diagnostics, eligibility, tientUnBinome, roleDe, roleOf, slotCoverage } from './rules';
 
 function person(id: string): Person {
   return { id, nom: id, email: '', role: '', tags: [], jours: [], maxCharge: 0, notes: '' };
@@ -14,25 +14,29 @@ function state(over: Partial<RegieState> = {}): RegieState {
   return { ...blankState(), people: [], slots: [], assign: {}, roles: {}, ...over };
 }
 
-describe('isSalleConference', () => {
-  it('retient les amphis et les labs', () => {
-    expect(isSalleConference(slot('a', { salle: 'Amphi A' }))).toBe(true);
-    expect(isSalleConference(slot('b', { salle: 'Grand amphi' }))).toBe(true);
-    expect(isSalleConference(slot('c', { salle: 'Lab' }))).toBe(true);
-    expect(isSalleConference(slot('d', { salle: 'Lab 2' }))).toBe(true);
+describe('tientUnBinome', () => {
+  it('retient les amphis', () => {
+    expect(tientUnBinome(slot('a', { salle: 'Amphi A' }))).toBe(true);
+    expect(tientUnBinome(slot('b', { salle: 'Grand amphi' }))).toBe(true);
+  });
+
+  // Les labs n'ont ni time keeper ni captation, et ne tiennent qu'une personne.
+  // Ce test falsifie tout retour du `|^lab` dans le prédicat.
+  it('écarte les labs', () => {
+    expect(tientUnBinome(slot('c', { salle: 'Lab' }))).toBe(false);
+    expect(tientUnBinome(slot('d', { salle: 'Lab 2' }))).toBe(false);
   });
 
   // Sans ces négatifs à salle non vide, le prédicat pourrait être réécrit en
   // `salle !== ''` — ou perdre son ancre ^ — sans qu'aucun test ne bronche.
-  it('écarte une salle qui ne relève ni des amphis ni des labs', () => {
-    // « Collaboratif » contient « lab » sans en être un : cela épingle l'ancre ^.
-    expect(isSalleConference(slot('g', { salle: 'Collaboratif' }))).toBe(false);
-    expect(isSalleConference(slot('h', { salle: 'Salle 1' }))).toBe(false);
+  it('écarte toute autre salle', () => {
+    expect(tientUnBinome(slot('g', { salle: 'Collaboratif' }))).toBe(false);
+    expect(tientUnBinome(slot('h', { salle: 'Salle 1' }))).toBe(false);
   });
 
   it('écarte les créneaux sans salle : postes et formation', () => {
-    expect(isSalleConference(slot('e', { salle: '', format: 'accueil' }))).toBe(false);
-    expect(isSalleConference(slot('f', { salle: '', format: 'formation' }))).toBe(false);
+    expect(tientUnBinome(slot('e', { salle: '', format: 'accueil' }))).toBe(false);
+    expect(tientUnBinome(slot('f', { salle: '', format: 'formation' }))).toBe(false);
   });
 });
 
@@ -151,7 +155,7 @@ describe('diagnostics — postes à pourvoir', () => {
     expect(d.under.some((u) => u.slot.id === 's1')).toBe(true);
   });
 
-  // Ce test doit FALSIFIER le garde isSalleConference : les deux créneaux hors
+  // Ce test doit FALSIFIER le garde tientUnBinome : les deux créneaux hors
   // salle sont complets, l'un sans captation désignée, l'autre avec une captation
   // non formée. Sans le garde, le premier remonterait dans missingRole et le
   // second dans untrained.
