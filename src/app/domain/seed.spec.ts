@@ -1,5 +1,5 @@
 import { Slot } from './model';
-import { POSTE_OUVERTURE, blankState, seedDay } from './seed';
+import { POSTE_OUVERTURE, blankState, seedDay, seedPostes, seedSessions } from './seed';
 import { tientUnBinome } from './rules';
 import { parseTime } from './util';
 
@@ -45,16 +45,6 @@ describe('seedDay — formation captation', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  // L'invariant qui casserait en silence : programmeBoundaries dérive les
-  // coupures des débuts de session, donc ajouter une session pourrait
-  // redécouper les vacations. Le jeudi doit rester calé sur le vendredi.
-  it('ne modifie pas le découpage des vacations', () => {
-    const jeudi = seedDay('Jeudi 29');
-    const vendredi = seedDay('Vendredi 30');
-    expect(vacations(jeudi, 'accueil')).toEqual(vacations(vendredi, 'accueil'));
-    expect(vacations(jeudi, 'bagages')).toEqual(vacations(vendredi, 'bagages'));
-  });
-
   it("expose un format 'formation' dans l'état initial", () => {
     const state = blankState();
     const format = state.formats.find((f) => f.key === FORMATION);
@@ -93,5 +83,46 @@ describe('PROGRAMME — accord entre besoin du binôme et périmètre des salles
     expect(tenus.length).toBeGreaterThan(0);
     const fautifs = tenus.filter((s) => !tientUnBinome(s)).map((s) => `${s.format} en « ${s.salle} »`);
     expect(fautifs).toEqual([]);
+  });
+});
+
+describe('seedDay — parking', () => {
+  const parkings = (slots: Slot[]) => slots.filter((s) => s.format === 'parking');
+
+  it('pose un créneau sur chaque journée', () => {
+    expect(parkings(seedDay('Jeudi 29')).length).toBe(1);
+    expect(parkings(seedDay('Vendredi 30')).length).toBe(1);
+  });
+
+  it('porte le titre, le besoin et les horaires demandés', () => {
+    const [p] = parkings(seedDay('Vendredi 30'));
+    expect(p.titre).toBe('Parking');
+    expect(p.besoin).toBe(2);
+    expect(p.debut).toBe(parseTime(POSTE_OUVERTURE));
+    expect(p.fin).toBe(9 * 60);
+    expect(p.salle).toBe('');
+  });
+
+  // Salle vide : ni time keeper ni captation, couverture purement quantitative.
+  it('ne tient pas de binôme', () => {
+    expect(tientUnBinome(parkings(seedDay('Jeudi 29'))[0])).toBe(false);
+  });
+
+  it('demande deux personnes par défaut', () => {
+    const need = Object.fromEntries(blankState().formats.map((f) => [f.key, f.need]));
+    expect(need['parking']).toBe(2);
+  });
+});
+
+// L'ancien invariant comparait jeudi et vendredi : une coupure parasite posée
+// sur LES DEUX jours y serait passée inaperçue. Celui-ci compare chaque journée
+// à elle-même, sans ses créneaux hors grille.
+describe('seedDay — les créneaux hors grille ne redécoupent pas les vacations', () => {
+  it('produit les mêmes vacations qu\'une journée réduite à sa grille', () => {
+    for (const jour of ['Jeudi 29', 'Vendredi 30']) {
+      const sansExtras = seedPostes(jour, seedSessions(jour));
+      expect(vacations(seedDay(jour), 'accueil')).toEqual(vacations(sansExtras, 'accueil'));
+      expect(vacations(seedDay(jour), 'bagages')).toEqual(vacations(sansExtras, 'bagages'));
+    }
   });
 });

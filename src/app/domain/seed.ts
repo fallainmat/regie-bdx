@@ -3,6 +3,9 @@ import { parseTime, uid } from './util';
 
 /** Clé du format de la formation à la captation. */
 export const FORMATION_KEY = 'formation';
+
+/** Clé du format du parking. */
+export const PARKING_KEY = 'parking';
 export const DEFAULT_FORMATS: Format[] = [
   { key: 'keynote', label: 'Keynote', need: 2 },
   { key: 'conference', label: 'Conférence', need: 2 },
@@ -13,6 +16,7 @@ export const DEFAULT_FORMATS: Format[] = [
   { key: 'accueil', label: 'Accueil', need: 6 },
   { key: 'bagages', label: 'Bagages', need: 6 },
   { key: FORMATION_KEY, label: 'Formation captation', need: 10 },
+  { key: PARKING_KEY, label: 'Parking', need: 2 },
   { key: 'autre', label: 'Autre', need: 1 },
 ];
 
@@ -153,8 +157,31 @@ export function seedFormation(jour: string): Slot[] {
   ];
 }
 
+/** Besoin en helpers du parking. */
+export const PARKING_BESOIN = 2;
+
+/**
+ * Chaque journée s'ouvre par une heure de parking, hors grille type — un besoin
+ * quotidien, contrairement à la formation qui ne vaut que le jeudi.
+ * Même calage sur `POSTE_OUVERTURE` : le créneau ne coupe aucune vacation.
+ */
+export function seedParking(jour: string): Slot[] {
+  return [
+    {
+      id: uid('s'),
+      jour,
+      debut: parseTime(POSTE_OUVERTURE),
+      fin: parseTime('09:00'),
+      salle: '',
+      titre: 'Parking',
+      format: PARKING_KEY,
+      besoin: PARKING_BESOIN,
+    },
+  ];
+}
+
 export function seedDay(jour: string): Slot[] {
-  const sessions = [...seedFormation(jour), ...seedSessions(jour)];
+  const sessions = [...seedFormation(jour), ...seedParking(jour), ...seedSessions(jour)];
   return [...sessions, ...seedPostes(jour, sessions)];
 }
 
